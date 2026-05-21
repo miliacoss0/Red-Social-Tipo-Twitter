@@ -65,6 +65,7 @@
             color: #0c5460;
         }
     </style>
+
 </head>
 <body>
     <nav>
@@ -79,7 +80,28 @@
             <a href="{% url 'account_login' %}" class="btn">Iniciar Sesión</a>
         {% endif %}
     </nav>
+    <div class="chat-bubble">
+    <svg width="54" height="54" viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+        style="animation: float 2.5s steps(6) infinite; image-rendering: pixelated;">
 
+        <!-- bubble -->
+        <rect x="2" y="3" width="12" height="8" fill="#e8d5f5"/>
+        <rect x="4" y="11" width="3" height="2" fill="#e8d5f5"/>
+
+        <!-- border/shadow -->
+        <rect x="3" y="5" width="2" height="2" fill="#1a0a2e"/>
+        <rect x="11" y="5" width="2" height="2" fill="#1a0a2e"/>
+
+        <!-- smile -->
+        <rect x="5" y="8" width="6" height="1" fill="#1a0a2e"/>
+
+        <!-- shine -->
+        <rect x="3" y="4" width="1" height="1" fill="#ffffff55"/>
+    </svg>
+    </div>
+
+  <div class="login-box">
     <div class="container">
         {% if messages %}
             {% for message in messages %}
