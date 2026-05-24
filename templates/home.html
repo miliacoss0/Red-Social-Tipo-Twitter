@@ -3,7 +3,7 @@
 {% block titulo %}Inicio - Red Social Twitter{% endblock %}
 
 {% block contenido %}
-<h1>Bienvenido a nuestra Red Social Twitter</h1>
+<h1>Bienvenido</h1>
 
 {% if user.is_authenticated %}
     <div class="alert alert-success">
@@ -33,12 +33,12 @@
         <a href="{% url 'account_login' %}" class="btn" style="margin-top: 10px;">Iniciar Sesión con GitHub →</a>
     </div>
 {% endif %}
-
+<!--
 <h2>Características de la plataforma</h2>
 <ul>
     <li>✅ Autenticación segura con GitHub</li>
     <li>✅ Acceso a tu perfil de GitHub</li>
     <li>✅ Protección de datos mediante OAuth 2.0</li>
     <li>✅ Sin necesidad de contraseñas adicionales</li>
-</ul>
+</ul>-->
 {% endblock %}
