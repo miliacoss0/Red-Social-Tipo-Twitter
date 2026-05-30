@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Bienvenido{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'base.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <nav>
+        <a href="/">Inicio</a>
+        {% if user.is_authenticated %}
+            <a href="/perfil/">Nuestro Perfil ({{ user.username }})</a>
+            <form action="{% url 'account_logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
+            </form>
+        {% else %}
+            <a href="{% url 'account_login' %}" class="btn">Iniciar Sesión</a>
+        {% endif %}
+    </nav>
+    <div class="main-content">
+        <div class="login-box">
+            <div class="win-titlebar">
+                <span class="win-title">
+                    Login.exe
+                </span>
+                <div class="win-controls">
+                    <button class="win-btn">-</button>
+                    <button class="win-btn">□</button>
+                    <button class="win-btn win-btn-close">x</button>
+                </div>
+            </div>
+            <div class="win-menubar">
+                <span class="win-menu-item">Archivo</span>
+                <span class="win-menu-item">Editar</span>
+                <span class="win-menu-item">Ayuda</span>
+            </div>
+            <div class="container">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% block contenido %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

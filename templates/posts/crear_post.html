@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<h2>Crear Post</h2>
+<form method="post">
+    {% csrf_token %}
+    <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
+    <button type="submit">Publicar</button>
+</form>
+{% endblock %}

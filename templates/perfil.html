@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Nuestro Perfil - Red Social Twitter{% endblock %}
+
+{% block contenido %}
+<h1>Mi Perfil de Usuario</h1>
+
+<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <h2>Información de tu cuenta</h2>
+    {% with social=user.socialaccount_set.first %}
+        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            {% if social and social.get_avatar_url %}
+                <div>
+                    <img src="{{ social.get_avatar_url }}" alt="Avatar" style="width: 150px; border-radius: 50%;">
+                </div>
+            {% endif %}
+            <div style="flex: 1;">
+                <p><strong>Usuario:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Miembro desde:</strong> {{ user.date_joined|date:"d/m/Y H:i" }}</p>
+                <p><strong>Último acceso:</strong> {{ user.last_login|date:"d/m/Y H:i" }}</p>
+                
+                {% if social %}
+                    <h3>Datos de GitHub</h3>
+                    <p><strong>ID GitHub:</strong> {{ social.uid }}</p>
+                    <p><strong>Nombre completo:</strong> {{ social.extra_data.name|default:"No público" }}</p>
+                    <p><strong>Ubicación:</strong> {{ social.extra_data.location|default:"No especificada" }}</p>
+                    <p><strong>Repositorios públicos:</strong> {{ social.extra_data.public_repos }}</p>
+                    <p><strong>Seguidores:</strong> {{ social.extra_data.followers }}</p>
+                    <p><strong>Siguiendo:</strong> {{ social.extra_data.following }}</p>
+                    <p><strong>Perfil GitHub:</strong> <a href="{{ social.extra_data.html_url }}" target="_blank">Visitar</a></p>
+                {% endif %}
+            </div>
+        </div>
+    {% endwith %}
+</div>
+
+<h2 style="margin-top: 30px;">¿Cómo funciona este login?</h2>
+<p>Este sistema utiliza OAuth 2.0 para autenticarte con GitHub sin compartir tu contraseña.</p>
+{% endblock %}
