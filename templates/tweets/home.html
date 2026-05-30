@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Inicio - Red Social{% endblock %}
+
+{% block contenido %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h1>Inicio</h1>
+    
+    <!-- Formulario para crear tweet -->
+    {% if user.is_authenticated %}
+    <div style="background: #f6f8fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+        <h3>¿Qué está pasando?</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+                Tweetear
+            </button>
+        </form>
+        <small style="color: #586069;">Ejemplo: "Hola @{{ user.username }} esto es una mención #test"</small>
+    </div>
+    {% endif %}
+    
+    <!-- Lista de tweets -->
+    <h2>Tweets recientes</h2>
+    
+    {% for tweet in tweets %}
+    <div style="border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+        <div style="margin-bottom: 10px; color: #0366d6;">
+            <strong>{{ tweet.author.username }}</strong>
+            <small style="color: #586069;">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
+        </div>
+        
+        <!-- Contenido del tweet con menciones resaltadas -->
+        <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
+            {{ tweet.content|linebreaksbr }}
+        </div>
+        
+        <!-- Hashtags -->
+        <div style="margin-bottom: 10px;">
+            {% for hashtag in tweet.hashtags.all %}
+            <a href="{% url 'hashtag' hashtag.name %}" style="color: #0366d6; text-decoration: none; margin-right: 10px; font-size: 14px;">
+                #{{ hashtag.name }}
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Indicador de menciones (si te mencionaron a TI) -->
+        {% if user.is_authenticated and user in tweet.get_mentions %}
+        <div style="background: #f0f8ff; padding: 5px 10px; border-radius: 6px; margin-top: 10px; font-size: 12px; color: #0366d6;">
+            📢 Te mencionaron en este tweet
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p>No hay tweets aún. ¡Sé el primero en publicar!</p>
+    {% endfor %}
+</div>
+
+<style>
+    .mention-link {
+        color: #0366d6;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .mention-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
