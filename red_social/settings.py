@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # ← NUEVO: Necesario para django-allauth
+    'posts',   #app 
 
     # Aplicaciones de django-allauth (NUEVO)
     'allauth',
@@ -47,19 +48,18 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
 
     'usuarios',  # ← NUEVA: Tu app de usuarios
-
 ]
 
-# ============ CONFIGURACIÓN DE SITIO ============
+# configuración de sitio
 SITE_ID = 1  # ← NUEVO
 
-# ============ BACKENDS DE AUTENTICACIÓN ============
+# backend de autorización
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Backend original
     'allauth.account.auth_backends.AuthenticationBackend',  # ← NUEVO
 ]
 
-# ============ CONFIGURACIÓN DE GITHUB ============
+# confi de github
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
         'SCOPE': [

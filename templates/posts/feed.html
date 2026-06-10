@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<h2>Mi Feed</h2>
+
+<form method="post" action="{% url 'crear_post' %}">
+    {% csrf_token %}
+    <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
+    <button type="submit">Publicar</button>
+</form>
+
+{% for post in posts %}
+<div>
+    <strong>{{ post.autor.username }}</strong>
+    <span>{{ post.fecha }}</span>
+    {% if post.editado %}<span>✏️ editado</span>{% endif %}
+    <p>
+        {{ post.contenido }}
+        {% if post.autor == request.user %}
+            {% if post.puede_editar_ahora %}
+                <a href="{% url 'editar_post' post.id %}">✏️</a>
+            {% endif %}
+            <a href="{% url 'borrar_post' post.id %}">🗑️</a>
+        {% endif %}
+    </p>
+</div>
+{% empty %}
+<p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
+{% endfor %}
+
+{% endblock %}
