@@ -1,20 +1,16 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 
 def home(request):
     """
-    Vista principal que muestra contenido diferente
-    si el usuario está autenticado o no
+    Página de login.
+    Si el usuario ya está logueado, redirige al feed.
     """
-    return render(request, 'home.html')
+    if request.user.is_authenticated:
+        return redirect('/feed/')  # ← Redirige directamente al feed
+    return render(request, 'login.html')
 
-@login_required  # Solo usuarios autenticados pueden ver esta vista
+
+@login_required
 def perfil(request):
-    """
-    Vista del perfil del usuario con información de GitHub
-    """
-    contexto = {
-        'usuario': request.user,
-    }
-    return render(request, 'perfil.html', contexto)
+    return render(request, 'perfil.html', {'usuario': request.user})

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Buscar - Red Social{% endblock %}
+
+{% block contenido %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h1>Buscador</h1>
+    
+    <!-- Formulario de búsqueda -->
+    <form method="get" action="{% url 'search' %}" style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <input type="text" name="q" placeholder="Buscar tweets, usuarios o #hashtags..." 
+               value="{{ query }}" 
+               style="flex: 1; padding: 10px; border: 1px solid #e1e4e8; border-radius: 6px; font-size: 16px;">
+        <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+            Buscar
+        </button>
+    </form>
+    
+    <!-- Resultados -->
+    {% if query %}
+    <h2>Resultados para: "{{ query }}"</h2>
+        {% if results %}
+            {% for tweet in results %}
+            <div style="border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="margin-bottom: 10px; color: #0366d6;">
+                    <strong>{{ tweet.author.username }}</strong>
+                    <small style="color: #586069;">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    {{ tweet.content|linebreaksbr }}
+                </div>
+                <div>
+                    {% for hashtag in tweet.hashtags.all %}
+                    <a href="{% url 'hashtag' hashtag.name %}" style="color: #0366d6; text-decoration: none; margin-right: 10px;">
+                        #{{ hashtag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No se encontraron resultados para "{{ query }}"</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -4,23 +4,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block titulo %}Bienvenido{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'base.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <title>{% block titulo %}Red Social Twitter - Nuestro Login con GitHub{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* ========== NAVBAR MODERNA ========== */
+        .navbar {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 12px 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* Logo / Feed button */
+        .nav-logo a {
+            background: linear-gradient(135deg, #2ea44f, #238636);
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(46, 164, 79, 0.3);
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-logo a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 164, 79, 0.5);
+            background: linear-gradient(135deg, #238636, #2ea44f);
+        }
+
+        /* Menú derecha */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Perfil especial */
+        .nav-profile {
+            background-color: rgba(46, 164, 79, 0.2);
+            border: 1px solid rgba(46, 164, 79, 0.5);
+        }
+
+        .nav-profile:hover {
+            background-color: rgba(46, 164, 79, 0.4);
+        }
+
+        /* Botón cerrar sesión */
+        .logout-form {
+            display: inline;
+        }
+
+        .btn-logout {
+            background-color: #d73a49;
+            color: white;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background-color: #cb2431;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(215, 58, 73, 0.4);
+        }
+
+        /* Botón iniciar sesión - MISMO ESTILO QUE FEED */
+        .btn-login {
+            background: linear-gradient(135deg, #2ea44f, #238636);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 164, 79, 0.5);
+        }
+
+        /* Container para contenido */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        /* Alertas */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
-    <nav>
-        <a href="/">Inicio</a>
-        {% if user.is_authenticated %}
-            <a href="/perfil/">Nuestro Perfil ({{ user.username }})</a>
-            <form action="{% url 'account_logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
-            </form>
-        {% else %}
-            <a href="{% url 'account_login' %}" class="btn">Iniciar Sesión</a>
-        {% endif %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo / FEED (siempre visible) -->
+            <div class="nav-logo">
+                <a href="{% url 'feed_home' %}">
+                    📱 FEED
+                </a>
+            </div>
+
+            <!-- Menú derecho -->
+            <div class="nav-menu">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'search' %}" class="nav-link">
+                        🔍 Buscar
+                    </a>
+                    <a href="{% url 'menciones' %}" class="nav-link">
+                        📢 Menciones
+                    </a>
+                    <a href="{% url 'perfil' %}" class="nav-link nav-profile">
+                        👤 {{ user.username }}
+                    </a>
+                    <form action="{% url 'account_logout' %}" method="post" class="logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout">
+                            🚪 Salir
+                        </button>
+                    </form>
+                {% else %}
+                    <!-- Botón Iniciar Sesión con MISMO estilo que FEED -->
+                    <a href="{% url 'account_login' %}" class="btn-login">
+                        🔐 Iniciar Sesión
+                    </a>
+                {% endif %}
+            </div>
+        </div>
     </nav>
     <div class="main-content">
         <div class="login-box">
