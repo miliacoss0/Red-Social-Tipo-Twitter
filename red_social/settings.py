@@ -39,13 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # ← NUEVO: Necesario para django-allauth
+    'posts',   #app 
 
     # Aplicaciones de django-allauth (NUEVO)
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
-
     'usuarios',  # ← NUEVA: Tu app de usuarios
 
 ]

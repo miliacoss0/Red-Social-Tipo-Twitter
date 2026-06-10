@@ -20,13 +20,16 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # ============ NUEVO: URLs para autenticación con GitHub ============
+    # URLs para autenticación con GitHub 
     # Esto añade las siguientes URLs automáticamente:
     # /accounts/login/         → Página de inicio de sesión
     # /accounts/logout/        → Cerrar sesión
     # /accounts/github/login/  → Iniciar sesión con GitHub
     path('accounts/', include('allauth.urls')),
 
-    # ============ NUEVO: URLs de tu app usuarios ============
+    #URLs de tu app usuarios
     path('', include('usuarios.urls')),
+    
+    #URLs de tu app post 
+    path('posts/', include('posts.urls')),
 ]

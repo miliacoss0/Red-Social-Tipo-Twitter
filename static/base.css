@@ -1,0 +1,422 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+:root {
+  --blue-dark:    #1a0a5e;
+  --blue-mid:     #2d1b9e;
+  --blue-bright:  #4040cc;
+  --blue-bg:      #3535b5;
+  --purple-deep:  #6b2fa0;
+  --purple-mid:   #9b5aca;
+  --pink-hot:     #e060c8;
+  --pink-mid:     #d080d0;
+  --pink-light:   #f0b0f0;
+  --pink-pale:    #fce8fc;
+  --cyan-accent:  #40e8f0;
+  --white:        #ffffff;
+  --off-white:    #f0e8ff;
+  --window-bg:    #dcd0f8;
+  --window-body:  #eee4ff;
+  --text-dark:    #1a0a2e;
+  --text-mid:     #3d1a6e;
+  --checkerboard: rgba(255,255,255,0.06);
+
+  --border-outer: 3px solid var(--white);
+  --border-win:   3px solid var(--blue-dark);
+  --border-inner: 2px solid var(--blue-mid);
+  --pixel-shadow: 4px 4px 0px var(--blue-dark);
+  --btn-shadow:   3px 3px 0px var(--blue-dark);
+}
+
+/*base*/
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  background-color: var(--blue-bg);
+  background-image:
+    linear-gradient(45deg, var(--checkerboard) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checkerboard) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checkerboard) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checkerboard) 75%);
+  background-size: 24px 24px;
+  background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+  color: var(--text-dark);
+  min-height: 100vh;
+}
+
+/*barra nav*/
+nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: linear-gradient(to right, var(--purple-deep), var(--blue-dark));
+  border-bottom: 3px solid var(--blue-dark);
+  border-top: var(--border-outer);
+  border-left: var(--border-outer);
+  border-right: var(--border-outer);
+  margin: 10px 10px 0;
+  image-rendering: pixelated;
+}
+
+nav::before {
+  content: '★ RED SOCIAL v1.0 ★';
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--cyan-accent);
+  text-shadow: 0 0 6px var(--cyan-accent);
+  margin-right: auto;
+  letter-spacing: 1px;
+}
+
+nav a {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--pink-light);
+  text-decoration: none;
+  padding: 2px 10px;
+  border: 2px solid transparent;
+  transition: none;
+}
+
+nav a:hover {
+  color: var(--cyan-accent);
+  border: 2px solid var(--cyan-accent);
+  background: rgba(64,232,240,0.12);
+}
+
+/*nav boton*/
+nav form { display: inline; }
+
+.btn {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  padding: 3px 14px;
+  background: var(--pink-hot);
+  color: var(--white);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-top: 2px solid var(--pink-light);
+  border-left: 2px solid var(--pink-light);
+  border-bottom: 2px solid var(--purple-deep);
+  border-right: 2px solid var(--purple-deep);
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: var(--btn-shadow);
+  transition: none;
+}
+
+.btn:hover {
+  background: var(--pink-mid);
+  filter: brightness(1.1);
+}
+
+.btn:active,
+.btn-danger:active {
+  border-top: 2px solid var(--purple-deep);
+  border-left: 2px solid var(--purple-deep);
+  border-bottom: 2px solid var(--pink-light);
+  border-right: 2px solid var(--pink-light);
+  box-shadow: 1px 1px 0px var(--blue-dark);
+  transform: translate(2px, 2px);
+}
+
+.btn-danger {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  padding: 3px 14px;
+  background: #c04060;
+  color: var(--white);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-top: 2px solid #f07090;
+  border-left: 2px solid #f07090;
+  border-bottom: 2px solid #601020;
+  border-right: 2px solid #601020;
+  box-shadow: var(--btn-shadow);
+}
+
+.btn-danger:hover { background: #d05070; }
+
+/*main layout*/
+.main-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 32px;
+  padding: 32px 40px;
+  min-height: calc(100vh - 58px);
+}
+
+/*login*/
+.login-box {
+  width: 340px;
+  flex-shrink: 0;
+  background: var(--window-body);
+  border: 3px solid var(--white);
+  box-shadow: var(--pixel-shadow);
+}
+
+/* Barra de título */
+.win-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to right, var(--blue-dark), var(--purple-deep));
+  padding: 5px 8px;
+  border-bottom: 2px solid var(--blue-dark);
+}
+
+.win-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--white);
+  letter-spacing: 1px;
+}
+
+.win-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.win-btn {
+  width: 16px;
+  height: 14px;
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-dark);
+  background: var(--window-bg);
+  border-top: 2px solid var(--white);
+  border-left: 2px solid var(--white);
+  border-bottom: 2px solid #7070a0;
+  border-right: 2px solid #7070a0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+}
+
+.win-btn:active {
+  border-top: 2px solid #7070a0;
+  border-left: 2px solid #7070a0;
+  border-bottom: 2px solid var(--white);
+  border-right: 2px solid var(--white);
+}
+
+.win-btn-close {
+  background: #c04060;
+  color: var(--white);
+}
+
+/* Barra de menú */
+.win-menubar {
+  display: flex;
+  gap: 0;
+  background: var(--window-bg);
+  border-bottom: 2px solid var(--blue-mid);
+  padding: 2px 4px;
+}
+
+.win-menu-item {
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  color: var(--text-mid);
+  padding: 1px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.win-menu-item:hover {
+  background: var(--blue-dark);
+  color: var(--white);
+}
+
+/* Cuerpo de la ventana */
+.win-body {
+  padding: 20px 22px 24px;
+  background: var(--window-body);
+}
+
+/*alertas*/
+.alert {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+  border: 2px solid var(--blue-dark);
+  background: var(--pink-pale);
+  color: var(--text-dark);
+}
+
+/*forms dentro del login*/
+h1, h2, h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--blue-dark);
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+label {
+  display: block;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--text-mid);
+  margin-bottom: 2px;
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--text-dark);
+  background: var(--white);
+  padding: 4px 8px;
+  border-top: 2px solid #9090b8;
+  border-left: 2px solid #9090b8;
+  border-bottom: 2px solid var(--white);
+  border-right: 2px solid var(--white);
+  outline: none;
+  margin-bottom: 4px;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-top: 2px solid var(--blue-dark);
+  border-left: 2px solid var(--blue-dark);
+  background: #fffcff;
+}
+
+/* Submit / primary action button */
+input[type="submit"],
+button[type="submit"] {
+  margin-top: 16px;
+  width: 100%;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 10px;
+  background: var(--pink-hot);
+  color: var(--white);
+  cursor: pointer;
+  border-top: 3px solid var(--pink-light);
+  border-left: 3px solid var(--pink-light);
+  border-bottom: 3px solid var(--purple-deep);
+  border-right: 3px solid var(--purple-deep);
+  box-shadow: var(--btn-shadow);
+  letter-spacing: 1px;
+  transition: none;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover {
+  background: var(--cyan-accent);
+  color: var(--text-dark);
+  border-top-color: #a0ffff;
+  border-left-color: #a0ffff;
+  border-bottom-color: #00a0a8;
+  border-right-color: #00a0a8;
+}
+
+input[type="submit"]:active,
+button[type="submit"]:active {
+  border-top: 3px solid var(--purple-deep);
+  border-left: 3px solid var(--purple-deep);
+  border-bottom: 3px solid var(--pink-light);
+  border-right: 3px solid var(--pink-light);
+  box-shadow: 1px 1px 0px var(--blue-dark);
+  transform: translate(2px, 2px);
+}
+
+/* Secondary links / social login */
+.login-box a {
+  color: var(--purple-deep);
+  text-decoration: none;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  border-bottom: 1px dotted var(--purple-mid);
+}
+
+.login-box a:hover {
+  color: var(--pink-hot);
+  border-bottom-color: var(--pink-hot);
+}
+
+/* Social auth button (GitHub etc.) */
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 10px;
+  background: #1a1a2e;
+  color: var(--cyan-accent);
+  cursor: pointer;
+  text-decoration: none;
+  border-top: 3px solid #4040a0;
+  border-left: 3px solid #4040a0;
+  border-bottom: 3px solid #000010;
+  border-right: 3px solid #000010;
+  box-shadow: var(--btn-shadow);
+  letter-spacing: 1px;
+}
+
+.btn-social:hover {
+  background: #2a2a4e;
+  color: var(--white);
+  border-bottom-color: var(--purple-mid) !important;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 4px;
+  color: var(--text-mid);
+  font-size: 15px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 2px dashed var(--blue-mid);
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,10,0.04) 2px,
+    rgba(0,0,10,0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+/*responsivo*/
+@media (max-width: 640px) {
+  .main-content {
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+  }
+  .login-box { width: 100%; }
+  
+}
