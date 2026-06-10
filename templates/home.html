@@ -1,15 +1,34 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block titulo %}Inicio - Red Social Twitter{% endblock %}
 
 {% block contenido %}
 <h1>Bienvenido a nuestra Red Social Twitter</h1>
-
 {% if user.is_authenticated %}
     <div class="alert alert-success">
         <h2>¡Hola, {{ user.username }}!</h2>
         <p>Has iniciado sesión correctamente con GitHub.</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p>
+            <strong>Email:</strong> 
+            <span id="email-texto">{{ user.email|slice:":4" }}*******{{ user.email|slice:"-10:" }}</span>
+            <span id="ojo" onclick="toggleEmail('{{ user.email }}')" style="cursor:pointer;">
+                <img id="ojo-img" src="{% static 'ojo.jpg' %}" width="25" height="25" style="vertical-align: middle;">
+            </span>
+        </p>
+        <script>
+            let visible = false;
+            function toggleEmail(emailReal) {
+                const span = document.getElementById('email-texto');
+                if (visible) {
+                    const partes = emailReal.split('@');
+                    span.textContent = partes[0].slice(0, 4) + '*******@' + partes[1];
+                } else {
+                    span.textContent = emailReal;
+                }
+                visible = !visible;
+            }
+        </script>
         <p><strong>Miembros desde:</strong> {{ user.date_joined|date:"d/m/Y" }}</p>
         
         <h3>Tu información de GitHub:</h3>
@@ -33,6 +52,7 @@
         <a href="{% url 'account_login' %}" class="btn" style="margin-top: 10px;">Iniciar Sesión con GitHub →</a>
     </div>
 {% endif %}
+<!--
 <h2>Características de la plataforma</h2>
 <ul>
     <li>✅ Autenticación segura con GitHub</li>
@@ -40,4 +60,5 @@
     <li>✅ Protección de datos mediante OAuth 2.0</li>
     <li>✅ Sin necesidad de contraseñas adicionales</li>
 </ul>
+</ul>-->
 {% endblock %}

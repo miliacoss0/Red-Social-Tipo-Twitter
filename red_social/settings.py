@@ -47,19 +47,18 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
     'usuarios',  # ← NUEVA: Tu app de usuarios
-
 ]
 
-# ============ CONFIGURACIÓN DE SITIO ============
+# configuración de sitio
 SITE_ID = 1  # ← NUEVO
 
-# ============ BACKENDS DE AUTENTICACIÓN ============
+# backend de autorización
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Backend original
     'allauth.account.auth_backends.AuthenticationBackend',  # ← NUEVO
 ]
 
-# ============ CONFIGURACIÓN DE GITHUB ============
+# confi de github
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
         'SCOPE': [
