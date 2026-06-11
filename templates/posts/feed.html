@@ -3,14 +3,15 @@
 {% block contenido %}
 <h2>Mi Feed</h2>
 
-<form method="post" action="{% url 'crear_post' %}">
+<form method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
+    <input type="file" name="archivo" accept="image/*,.gif,video/mp4,audio/mp3,audio/mpeg">
     <button type="submit">Publicar</button>
 </form>
 
 {% for post in posts %}
-<div>
+<div class="post-card">
     <strong>{{ post.autor.username }}</strong>
     <span>{{ post.fecha }}</span>
     {% if post.editado %}<span>✏️ editado</span>{% endif %}
@@ -23,6 +24,21 @@
             <a href="{% url 'borrar_post' post.id %}">🗑️</a>
         {% endif %}
     </p>
+
+    {% if post.archivo %}
+        {% if post.archivo.name|slice:"-4:" == ".mp4" %}
+            <video controls style="max-width: 280px;">
+                <source src="{{ post.archivo.url }}" type="video/mp4">
+            </video>
+        {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
+            <audio controls>
+                <source src="{{ post.archivo.url }}" type="audio/mpeg">
+            </audio>
+        {% else %}
+            <img src="{{ post.archivo.url }}" style="max-width: 280px;">
+        {% endif %}
+    {% endif %}
+
 </div>
 {% empty %}
 <p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>

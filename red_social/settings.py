@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
-    'usuarios',  # ← NUEVA: Tu app de usuarios
+    'usuarios',  #Tu app de usuarios
 ]
 
 # configuración de sitio
@@ -73,14 +73,14 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ============ CONFIGURACIÓN DE CUENTAS ============
+# confi de cuentas
 ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Login con email
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
-# ============ REDIRECCIONES ============
+# redireccion
 LOGIN_REDIRECT_URL = '/'  # A dónde ir después de login exitoso
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # A dónde ir después de logout
 LOGIN_URL = '/accounts/login/'  # URL del login
@@ -170,3 +170,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

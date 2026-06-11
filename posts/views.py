@@ -22,8 +22,9 @@ def feed(request):
 def crear_post(request):
     if request.method == 'POST':
         contenido = request.POST.get('contenido')
+        archivo = request.FILES.get('archivo')
         if contenido:
-            Post.objects.create(autor=request.user, contenido=contenido)
+            Post.objects.create(autor=request.user, contenido=contenido, archivo=archivo)
         return redirect('feed')
     return render(request, 'posts/crear_post.html')
 

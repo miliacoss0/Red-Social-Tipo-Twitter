@@ -9,6 +9,8 @@ class Post(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)
     editado = models.BooleanField(default=False)  # marca si fue editado
     fecha_edicion = models.DateTimeField(null=True, blank=True)  # cuándo se editó
+    imagen = models.ImageField(upload_to='posts/', null=True, blank=True)  
+    archivo = models.FileField(upload_to='posts/archivos/', null=True, blank=True)
     
     def puede_editar(self):
         # Devuelve True si no pasaron 20 minutos desde que se publicó
