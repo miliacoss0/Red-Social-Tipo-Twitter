@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Nuestros Hashtags{% endblock %}
+
+{% block contenido %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h1>Bienvenidos a nuestro Espacio de Hashtags</h1>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px;">
+        {% for hashtag in hashtags %}
+        <a href="{% url 'hashtag' hashtag.name %}" 
+           style="background: #e1e4e8; padding: 10px 20px; border-radius: 30px; text-decoration: none; color: #0366d6;">
+            #{{ hashtag.name }} <span style="color: #586069;">({{ hashtag.total_tweets }})</span>
+        </a>
+        {% empty %}
+        <p>No hay hashtags aún.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

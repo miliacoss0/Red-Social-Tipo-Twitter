@@ -3,9 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from .utils import extract_hashtags, extract_mentions
 
-# ============================================================
 # MODELO: HashTag (Almacena los #hashtags)
-# ============================================================
 class HashTag(models.Model):
     name = models.CharField(max_length=100, unique=True)
     
@@ -16,9 +14,8 @@ class HashTag(models.Model):
         ordering = ['name']
 
 
-# ============================================================
+
 # MODELO: Mention (DEBE ESTAR ANTES DE TWEET)
-# ============================================================
 class Mention(models.Model):
     """
     Modelo para almacenar menciones (@usuario)
@@ -36,9 +33,7 @@ class Mention(models.Model):
         ordering = ['-created_at']
 
 
-# ============================================================
 # MODELO: Tweet (Almacena los tweets/publicaciones)
-# ============================================================
 class Tweet(models.Model):
     author = models.ForeignKey(
         User,
@@ -103,4 +98,21 @@ class Tweet(models.Model):
                 print(f"📢 {self.author.username} mencionó a @{username}")
             except User.DoesNotExist:
                 pass
+
+
+# MODELO: Comentario (Para comentar en tweets)
+class Comentario(models.Model):
+    """
+    Modelo para almacenar comentarios en los tweets
+    """
+    tweet = models.ForeignKey('Tweet', on_delete=models.CASCADE, related_name='comentarios')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comentarios')
+    content = models.TextField(max_length=280)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Comentario de {self.author.username} en tweet {self.tweet.id}"
+    
+    class Meta:
+        ordering = ['-created_at']  
 

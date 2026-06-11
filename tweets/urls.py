@@ -19,4 +19,11 @@ urlpatterns = [
 
     # Perfil de usuario
     path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'), 
+
+    # hashtags populares 
+    path('hashtags/', views.hashtags_populares, name='hashtags_populares'),
+
+    # comentarios 
+    path('comentarios/<int:tweet_id>', views.comentarios, name='comentarios'),
 ]
+    

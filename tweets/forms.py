@@ -1,5 +1,6 @@
 from django import forms
 from .models import Tweet
+from .models import Comentario
 
 
 class TweetForm(forms.ModelForm):
@@ -21,4 +22,21 @@ class TweetForm(forms.ModelForm):
         }
         labels = {
             'content': 'Escribe tu tweet:'
+        }
+
+class ComentarioForm(forms.ModelForm):
+    class Meta:
+        model = Comentario
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Escribe tu comentario...',
+                'rows': 2,
+                'maxlength': 280,
+                'style': 'width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;'
+            }),
+        }
+        labels = {
+            'content': ''
         }

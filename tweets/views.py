@@ -2,9 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q  # Para búsquedas complejas
-from .models import Tweet, HashTag
-from .forms import TweetForm
-from .models import Mention # Debe importar Mention
+from .models import Tweet, HashTag, Mention, Comentario      # Modelos 
+from .forms import TweetForm, ComentarioForm   # Formularios
 
 
 def home(request):
@@ -120,7 +119,6 @@ def tweet_detalle(request, tweet_id):
     return render(request, 'tweets/tweet_detalle.html', {'tweet': tweet})
 
 
-# -----------
 # Nueva Vista: perfil_usuario (Perfil de usuario)
 # -----------
 def perfil_usuario(request, username):
@@ -138,3 +136,50 @@ def perfil_usuario(request, username):
         'tweets': tweets,
     }
     return render(request, 'tweets/perfil_usuario.html', context)
+
+# Nueva Vista: hashtags_populares (Lista de hashtags más usados)
+# --------
+def hashtags_populares(request):
+    """
+    Muestra los hashtags más utilizados ordenados por popularidad
+    """
+    from django.db.models import Count
+    
+    # Obtener hashtags ordenados por cantidad de tweets (los más populares)
+    hashtags = HashTag.objects.annotate(
+        total_tweets=Count('tweets')
+    ).order_by('-total_tweets')[:20]  # Top 20
+    
+    context = {
+        'hashtags': hashtags,
+    }
+    return render(request, 'tweets/hashtags_populares.html', context)
+
+# Nueva Vista: comentarios (Página de comentarios)
+# ------
+def comentarios(request, tweet_id):
+    """
+    Muestra y procesa comentarios de un tweet específico
+    """
+    tweet = get_object_or_404(Tweet, id=tweet_id)
+    comentarios = Comentario.objects.filter(tweet=tweet)
+    
+    # Procesar nuevo comentario
+    if request.method == 'POST' and request.user.is_authenticated:
+        form = ComentarioForm(request.POST)
+        if form.is_valid():
+            comentario = form.save(commit=False)
+            comentario.tweet = tweet
+            comentario.author = request.user
+            comentario.save()
+            messages.success(request, '¡Comentario publicado!')
+            return redirect('comentarios', tweet_id=tweet.id)
+    else:
+        form = ComentarioForm()
+    
+    context = {
+        'tweet': tweet,
+        'comentarios': comentarios,
+        'form': form,
+    }
+    return render(request, 'tweets/comentarios.html', context)

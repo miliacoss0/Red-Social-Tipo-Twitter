@@ -173,10 +173,14 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <!-- Logo / FEED (siempre visible) -->
+            <!-- Botones izquierda: FEED, Comentarios, Hashtags -->
             <div class="nav-logo">
-                <a href="{% url 'feed_home' %}">
+                <a href="{% url 'feed_home' %}" class="btn-feed">
                     📱 FEED
+                </a>
+
+                <a href="{% url 'hashtags_populares' %}" class="nav-link" style="margin-left: 15px;">
+                    # Hashtags
                 </a>
             </div>
 
