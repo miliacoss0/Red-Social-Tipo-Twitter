@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,6 +16,10 @@ urlpatterns = [
     #URLs de tu app usuarios
     path('', include('usuarios.urls')),
 
-    #---- Agregamos la URL de tweets ----
+    #URL de tweet
     path('feed/', include('tweets.urls')),                          # Página de feed (tweets)
-]
+
+    
+    #URLs de tu app post 
+    path('posts/', include('posts.urls')),   
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

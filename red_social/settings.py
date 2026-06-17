@@ -46,9 +46,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
-    'usuarios',  # ← NUEVA: Tu app de usuarios
-    'tweets',    # añadimos esta linea 
-
+    'usuarios',  #  app de usuarios
+    'tweets',    # app de tweets
 ]
 
 # configuración de sitio
@@ -75,7 +74,7 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ============ CONFIGURACIÓN DE CUENTAS ============
+# confi de cuentas
 ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Login con email
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
@@ -172,3 +171,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
