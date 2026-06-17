@@ -21,6 +21,12 @@
         {% else %}
             <a href="{% url 'account_login' %}" class="btn">Iniciar Sesión</a>
         {% endif %}
+            {% if user.is_authenticated %}
+                <form class="d-flex" method="GET" action="{% url 'search' %}">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Buscar..." aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">Buscar</button>
+                </form>
+            {% endif %}
     </nav>
     <div class="main-content">
         <div class="login-box feed-box">

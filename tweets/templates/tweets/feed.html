@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">🐦 Feed de Tweets</h1>
+    
+    <!-- Formulario para crear nuevo tweet -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>¿Qué está pasando?</h5>
+            <form method="POST" action="{% url 'crear_tweet' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="content" class="form-control" rows="3" placeholder="Escribe tu tweet..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Tweetear</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de tweets -->
+    <div class="tweets-container">
+        {% if tweets %}
+            {% for tweet in tweets %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            @{{ tweet.user.username }}
+                        </h6>
+                        <small class="text-muted">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="card-text">{{ tweet.content }}</p>
+                    
+                    <!-- Mostrar hashtags si existen -->
+                    {% if tweet.hashtags %}
+                        <div class="mt-2">
+                            {% for hashtag in tweet.hashtags.all %}
+                                <span class="badge bg-primary">#{{ hashtag.name }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                No hay tweets aún. ¡Sé el primero en publicar!
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                No hay tweets aún. ¡Sé el primero en publicar!
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

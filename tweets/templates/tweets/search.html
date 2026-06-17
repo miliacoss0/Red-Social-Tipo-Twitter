@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Buscar - Red Social{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">🔍 Resultados de búsqueda</h2>
+    
+    {% if query %}
+        <p class="text-muted">Resultados para: <strong>"{{ query }}"</strong></p>
+        
+        <div class="tweets-container">
+            {% if results %}
+                {% for tweet in results %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <a href="{% url 'perfil_usuario' tweet.author.username %}">
+                                    @{{ tweet.author.username }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="card-text">{{ tweet.content_display|safe }}</p>
+                        
+                        {% if tweet.hashtags.all %}
+                            <div class="mt-2">
+                                {% for hashtag in tweet.hashtags.all %}
+                                    <a href="{% url 'hashtag' hashtag.name %}" class="badge bg-primary text-decoration-none">
+                                        #{{ hashtag.name }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    No se encontraron resultados para "{{ query }}"
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="alert alert-secondary">
+            Usá el buscador en la barra de navegación para encontrar tweets, usuarios o hashtags.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

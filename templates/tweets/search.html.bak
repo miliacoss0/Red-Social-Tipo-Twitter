@@ -7,6 +7,13 @@
     <h1>Buscador</h1>
     
     <!-- Formulario de búsqueda -->
+    <form method="get" action="{% url 'search' %}" style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <input type="text" name="q" placeholder="Buscar tweets, usuarios o #hashtags..." 
+               value="{{ query }}" 
+               style="flex: 1; padding: 10px; border: 1px solid #e1e4e8; border-radius: 6px; font-size: 16px;">
+        <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+            Buscar
+        </button>
     </form>
     
     <!-- Resultados -->

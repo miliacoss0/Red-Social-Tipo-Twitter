@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">#{{ hashtag.name }}</h2>
+    <p class="text-muted">{{ tweets|length }} tweets con este hashtag</p>
+    
+    <div class="tweets-container">
+        {% if tweets %}
+            {% for tweet in tweets %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <a href="{% url 'perfil_usuario' tweet.author.username %}">
+                                @{{ tweet.author.username }}
+                            </a>
+                        </h6>
+                        <small class="text-muted">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="card-text">{{ tweet.content_display|safe }}</p>
+                    
+                    <!-- Mostrar otros hashtags del tweet -->
+                    {% if tweet.hashtags.all %}
+                        <div class="mt-2">
+                            {% for tag in tweet.hashtags.all %}
+                                {% if tag.name != hashtag.name %}
+                                    <a href="{% url 'hashtag' tag.name %}" class="badge bg-secondary text-decoration-none">
+                                        #{{ tag.name }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                No hay tweets con #{{ hashtag.name }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                No hay tweets con #{{ hashtag.name }}
+            </div>
+        {% endif %}
+    </div>
+    
+    <a href="{% url 'feed_home' %}" class="btn btn-secondary mt-3">
+        ← Volver al feed
+    </a>
+</div>
+{% endblock %}
