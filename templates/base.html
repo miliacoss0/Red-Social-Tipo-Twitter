@@ -7,7 +7,6 @@
     <title>{% block titulo %}Bienvenido{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'base.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-
 </head>
 <body>
     <nav>
@@ -23,11 +22,17 @@
         {% endif %}
     </nav>
     <div class="main-content">
+        <div class="sidebar-left">
+            <div class="win-titlebar">
+                <span class="win-title" style="margin: 0 auto;">Temas de interés</span>
+            </div>
+            <div class="container">
+                {# acá van los temas #}
+            </div>
+        </div>
         <div class="login-box feed-box">
             <div class="win-titlebar">
-                <span class="win-title">
-                    Login.exe
-                </span>
+                <span class="win-title">Login.exe</span>
                 <div class="win-controls">
                     <button class="win-btn">-</button>
                     <button class="win-btn">□</button>
@@ -45,10 +50,18 @@
                         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
                     {% endfor %}
                 {% endif %}
-
                 {% block contenido %}
                 {% endblock %}
             </div>
+        </div>
+    </div>
+    <div class="sidebar-right">
+        <div class="win-titlebar">
+            <span class="win-title" style="margin: 0 auto;">Notificaciones</span>
+        </div>
+        <div class="container">
+            <a href="#" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
+            <a href="#" class="btn" style="display:block; text-align:center;">@Menciones</a>
         </div>
     </div>
 </body>
