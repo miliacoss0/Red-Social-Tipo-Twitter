@@ -21,6 +21,7 @@
         {% endif %}
     </nav>
     <div class="main-content">
+        {% block sidebar_left %}
         <div class="sidebar-left">
             <div class="win-titlebar">
                 <span class="win-title" style="margin: 0 auto;">Temas de interés</span>
@@ -29,6 +30,8 @@
                 {# acá van los temas #}
             </div>
         </div>
+        {% endblock %}
+
         <div class="login-box feed-box">
             <div class="win-titlebar">
                 <span class="win-title">Login.exe</span>
@@ -53,17 +56,20 @@
                 {% endblock %}
             </div>
         </div>
-    </div>
-    <div class="sidebar-right">
-        <div class="win-titlebar">
-            <span class="win-title" style="margin: 0 auto;">Notificaciones</span>
+
+        {% block sidebar_right %}
+        <div class="sidebar-right">
+            <div class="win-titlebar">
+                <span class="win-title" style="margin: 0 auto;">Notificaciones</span>
+            </div>
+            <div class="container">
+                <a href="{% url 'hashtags' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
+                <a href="{% url 'menciones' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">@Menciones</a>
+                <a href="{% url 'feed' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Posts</a>
+                <a href="{% url 'perfil' %}" class="btn" style="display:block; text-align:center;">Configuración</a>
+            </div>
         </div>
-        <div class="container">
-            <a href="{% url 'hashtags' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
-            <a href="{% url 'menciones' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">@Menciones</a>
-            <a href="{% url 'feed' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Posts</a>
-            <a href="{% url 'perfil' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Configuración</a>
-        </div>
+        {% endblock %}
     </div>
 </body>
 </html>
