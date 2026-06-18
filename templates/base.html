@@ -12,7 +12,6 @@
     <nav>
         <a href="/">Inicio</a>
         {% if user.is_authenticated %}
-            <a href="/perfil/">Nuestro Perfil ({{ user.username }})</a>
             <form action="{% url 'account_logout' %}" method="post" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
@@ -61,7 +60,9 @@
         </div>
         <div class="container">
             <a href="#" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
-            <a href="#" class="btn" style="display:block; text-align:center;">@Menciones</a>
+            <a href="#" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">@Menciones</a>
+            <a href="{% url 'feed' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Posts</a>
+            <a href="{% url 'perfil' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Configuración</a>
         </div>
     </div>
 </body>
