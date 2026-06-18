@@ -74,3 +74,12 @@ def lista_usuarios(request):
         usuario.cant_seguidores = Follow.objects.filter(seguido=usuario).count()
     
     return render(request, 'posts/usuarios.html', {'usuarios': usuarios})
+
+@login_required
+def hashtags(request):
+    temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 'series', 'lectura', 'estudio', 'trabajo']
+    return render(request, 'posts/hashtags.html', {'temas': temas})
+
+@login_required
+def menciones(request):
+    return render(request, 'posts/menciones.html')

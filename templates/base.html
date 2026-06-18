@@ -59,8 +59,8 @@
             <span class="win-title" style="margin: 0 auto;">Notificaciones</span>
         </div>
         <div class="container">
-            <a href="#" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
-            <a href="#" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">@Menciones</a>
+            <a href="{% url 'hashtags' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">#Hashtags</a>
+            <a href="{% url 'menciones' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">@Menciones</a>
             <a href="{% url 'feed' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Posts</a>
             <a href="{% url 'perfil' %}" class="btn" style="display:block; margin-bottom: 10px; text-align:center;">Configuración</a>
         </div>
