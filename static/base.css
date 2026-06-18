@@ -49,6 +49,7 @@ html, body {
 /*barra nav*/
 nav {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   padding: 6px 16px;

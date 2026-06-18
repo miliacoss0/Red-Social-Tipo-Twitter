@@ -1,12 +1,36 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block contenido %}
 <h2>Mi Feed</h2>
 
 <form method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
-    <input type="file" name="archivo" accept="image/*,.gif,video/mp4,audio/mp3,audio/mpeg">
+    <div style="position: relative; display: inline-block;">
+    <button type="button" onclick="toggleMenu()">
+        <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
+    </button>
+    <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
+        <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
+        <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
+    </div>
+        <input type="file" id="input-foto" name="archivo" accept="image/*,.gif" style="display:none" onchange="archivoSeleccionado(this)">
+        <input type="file" id="input-video" name="archivo" accept="video/mp4" style="display:none" onchange="archivoSeleccionado(this)">
+        <span id="nombre-archivo"></span>
+    </div>
+
+    <script>
+    function toggleMenu() {
+        const menu = document.getElementById('menu-archivo');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    function archivoSeleccionado(input) {
+        document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
+        document.getElementById('menu-archivo').style.display = 'none';
+    }
+    </script>
     <button type="submit">Publicar</button>
 </form>
 
