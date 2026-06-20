@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Iniciar Sesión - Red Social{% endblock %}
+
+{% block contenido %}
+<div style="max-width: 400px; margin: 50px auto; text-align: center;">
+    <h1>Bienvenido a nuestra Red Social Twitter</h1>
+    
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2>Iniciar Sesión</h2>
+        <p>Usa tu cuenta de GitHub para acceder</p>
+        
+        <a href="/accounts/github/login/" style="display: inline-block; background-color: #24292e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 20px;">
+            🔐 Iniciar Sesión con GitHub
+        </a>
+    </div>
+    
+    <div style="margin-top: 30px; text-align: left;">
+        <h3>Características de la plataforma</h3>
+        <ul>
+            <li>✅ Autenticación segura con GitHub</li>
+            <li>✅ Acceso a tu perfil de GitHub</li>
+            <li>✅ Protección de datos mediante OAuth 2.0</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

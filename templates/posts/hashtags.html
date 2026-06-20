@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<h2>Hashtags</h2>
+
+{% for tema in temas %}
+<div class="post-card">
+    <a href="{% url 'hashtag_detalle' tema %}">  #{{ tema }}</a>
+</div>
+{% endfor %}
+
+{% endblock %}

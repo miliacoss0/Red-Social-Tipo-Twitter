@@ -49,6 +49,7 @@ html, body {
 /*barra nav*/
 nav {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
@@ -144,12 +145,13 @@ nav form { display: inline; }
 
 /*main layout*/
 .main-content {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 32px;
-  padding: 32px 40px;
-  min-height: calc(100vh - 58px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+    padding: 32px 40px;
+    min-height: calc(100vh - 58px);
+    position: relative;
 }
 
 /*login*/
@@ -430,10 +432,12 @@ body::after {
 /* Feed centrado estilo blog 2000s */
 .feed-box {
     width: 600px;
-    margin: 0 auto;
+    max-height: 85vh;
+    overflow-y: auto;
     background: var(--window-body);
     border: 3px solid var(--white);
     box-shadow: var(--pixel-shadow);
+    margin-left: 20px;
 }
 
 /* Recuadro de cada post */
@@ -445,4 +449,26 @@ body::after {
     box-shadow: 3px 3px 0px var(--blue-dark);
     padding: 10px 14px;
     margin-bottom: 12px;
+}
+
+/*tema de interes*/
+.sidebar-left {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--window-body);
+    border: 3px solid var(--white);
+    box-shadow: var(--pixel-shadow);
+    position: absolute;
+    left: 20px;
+    top: 32px;
+}
+
+.sidebar-left-2 {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--window-body);
+    border: 3px solid var(--white);
+    box-shadow: var(--pixel-shadow);
+    left: 20px;
+    top: 120px;
 }
