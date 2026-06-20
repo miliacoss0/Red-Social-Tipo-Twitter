@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
-    'usuarios',  #Tu app de usuarios
+    'usuarios',  # app de usuarios
+    'tweets',    # añadimos esta linea 
+
 ]
 
 # configuración de sitio
@@ -80,8 +82,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
-# redireccion
-LOGIN_REDIRECT_URL = '/'  # A dónde ir después de login exitoso
+# ============ REDIRECCIONES ============
+LOGIN_REDIRECT_URL = '/feed/'  # A dónde ir después de login exitoso
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # A dónde ir después de logout
 LOGIN_URL = '/accounts/login/'  # URL del login
 
