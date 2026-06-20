@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<h2>#{{ tema }}</h2>
+
+{% for post in posts %}
+<div class="post-card">
+    <strong>{{ post.autor.username }}</strong>
+    <span>{{ post.fecha }}</span>
+    <p>{{ post.contenido }}</p>
+    {% if post.archivo %}
+        {% if post.archivo.name|slice:"-4:" == ".mp4" %}
+            <video controls style="max-width: 100%;">
+                <source src="{{ post.archivo.url }}" type="video/mp4">
+            </video>
+        {% else %}
+            <img src="{{ post.archivo.url }}" style="max-width: 100%;">
+        {% endif %}
+    {% endif %}
+</div>
+{% empty %}
+<div class="post-card">
+    <p>No hay posts con #{{ tema }} todavía. Sé el primero en publicar con el #{{ tema }} </p>
+</div>
+{% endfor %}
+
+{% endblock %}

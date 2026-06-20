@@ -22,15 +22,26 @@
     </nav>
     <div class="main-content">
         {% block sidebar_left %}
-        <div class="sidebar-left">
-            <div class="win-titlebar">
-                <span class="win-title" style="margin: 0 auto;">Temas de interés</span>
+        <div style="position: absolute; left: 20px; top: 32px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="sidebar-left">
+                <div class="container">
+                    <form method="GET" action="{% url 'lista_usuarios' %}">
+                        <input type="text" name="q" placeholder="🔍 Buscar usuario...">
+                        <button type="submit">Buscar</button>
+                    </form>
+                </div>
             </div>
-            <div class="container">
-                {# acá van los temas #}
+
+            <div class="sidebar-left">
+                <div class="container">
+                    <p>Temas de interés</p>
+                </div>
+                <div class="container">
+                    {# acá van los temas #}
+                </div>
             </div>
-        </div>
-        {% endblock %}
+    </div>
+{% endblock %}
 
         <div class="login-box feed-box">
             <div class="win-titlebar">

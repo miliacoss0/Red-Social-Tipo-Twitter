@@ -458,20 +458,17 @@ body::after {
     background: var(--window-body);
     border: 3px solid var(--white);
     box-shadow: var(--pixel-shadow);
-    align-self: flex-start;
     position: absolute;
     left: 20px;
     top: 32px;
 }
 
-.sidebar-right {
+.sidebar-left-2 {
     width: 200px;
     flex-shrink: 0;
     background: var(--window-body);
     border: 3px solid var(--white);
     box-shadow: var(--pixel-shadow);
-    align-self: flex-start;
-    position: absolute;
-    right: 20px;
-    top: 100px;
+    left: 20px;
+    top: 120px;
 }

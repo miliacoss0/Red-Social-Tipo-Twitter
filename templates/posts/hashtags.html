@@ -5,7 +5,7 @@
 
 {% for tema in temas %}
 <div class="post-card">
-    <a href="#">#{{ tema }}</a>
+    <a href="{% url 'hashtag_detalle' tema %}">  #{{ tema }}</a>
 </div>
 {% endfor %}
 
