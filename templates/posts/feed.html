@@ -70,4 +70,33 @@
 <p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
 {% endfor %}
 
+<div id="posts-container"></div>
+
+<script>
+// Fetch: hace una petición GET a nuestra API
+// En vez de recargar la página, trae los datos en JSON y los muestra
+fetch('/posts/api/feed/')
+    .then(response => response.json())  // convierte la respuesta a JSON
+    .then(data => {
+        const container = document.getElementById('posts-container');
+        
+        if (data.posts.length === 0) {
+            container.innerHTML = '<p>No hay posts todavía.</p>';
+            return;
+        }
+
+        data.posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <strong>${post.autor}</strong>
+                <span>${post.fecha}</span>
+                ${post.editado ? '<span>✏️ editado</span>' : ''}
+                <p>${post.contenido}</p>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+</script>
 {% endblock %}
