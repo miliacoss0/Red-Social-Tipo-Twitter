@@ -5,120 +5,110 @@
 {% block contenido %}
 <h2>Mi Feed</h2>
 
-<form method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
+<form id="form-post" method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
     <div style="position: relative; display: inline-block;">
-    <button type="button" onclick="toggleMenu()">
-        <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
-    </button>
-    <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
-        <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
-        <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
-    </div>
+        <button type="button" onclick="toggleMenu()">
+            <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
+        </button>
+        <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
+            <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
+            <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
+        </div>
         <input type="file" id="input-foto" name="archivo" accept="image/*,.gif" style="display:none" onchange="archivoSeleccionado(this)">
         <input type="file" id="input-video" name="archivo" accept="video/mp4" style="display:none" onchange="archivoSeleccionado(this)">
         <span id="nombre-archivo"></span>
     </div>
-
-    <script>
-    function toggleMenu() {
-        const menu = document.getElementById('menu-archivo');
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    }
-    function archivoSeleccionado(input) {
-        document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
-        document.getElementById('menu-archivo').style.display = 'none';
-    }
-    </script>
     <button type="submit">Publicar</button>
 </form>
-
-{% for post in posts %}
-<div class="post-card">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-                <strong>{{ post.autor.username }}</strong>
-                <span>{{ post.fecha }}</span>
-                {% if post.editado %}<span>✏️ editado</span>{% endif %}
-                <p>{{ post.contenido }}</p>
-                {% if post.archivo %}
-                    {% if post.archivo.name|slice:"-4:" == ".mp4" %}
-                        <video controls style="max-width: 100%; display: block; margin: auto;">
-                            <source src="{{ post.archivo.url }}" type="video/mp4">
-                        </video>
-                    {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
-                        <audio controls>
-                        <  source src="{{ post.archivo.url }}" type="audio/mpeg">
-                        </audio>
-                    {% else %}
-                        <img src="{{ post.archivo.url }}" style="max-width: 100%;">
-                    {% endif %}
-                {% endif %}
-        </div>
-        {% if post.autor == request.user %}
-        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-            {% if post.puede_editar_ahora %}
-                <a href="{% url 'editar_post' post.id %}">🔧</a>
-            {% endif %}
-            <a href="{% url 'borrar_post' post.id %}">🗑️</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% empty %}
-<p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
-{% endfor %}
 
 <div id="posts-container"></div>
 
 <script>
-// Fetch: hace una petición GET a nuestra API
-// En vez de recargar la página, trae los datos en JSON y los muestra
-fetch('/posts/api/feed/')
-    .then(response => response.json())  // convierte la respuesta a JSON
-    .then(data => {
-        const container = document.getElementById('posts-container');
-        
-        if (data.posts.length === 0) {
-            container.innerHTML = '<p>No hay posts todavía.</p>';
-            return;
-        }
+function toggleMenu() {
+    const menu = document.getElementById('menu-archivo');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
 
-        data.posts.forEach(post => {
-            const div = document.createElement('div');
-            div.className = 'post-card';
-            div.innerHTML = `
-                <strong>${post.autor}</strong>
-                <span>${post.fecha}</span>
-                ${post.editado ? '<span>✏️ editado</span>' : ''}
-                <p>${post.contenido}</p>
-            `;
-            container.appendChild(div);
-        });
-    })
-    .catch(error => console.error('Error:', error));
-</script>
+function archivoSeleccionado(input) {
+    document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
+    document.getElementById('menu-archivo').style.display = 'none';
+}
 
-<script>
-// Ejemplo de POST via fetch para crear un post
-function crearPostFetch(contenido) {
+function cargarPosts() {
+    fetch('/posts/api/feed/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '';
+            if (data.posts.length === 0) {
+                container.innerHTML = '<p>No hay posts todavía.</p>';
+                return;
+            }
+            data.posts.forEach(post => {
+                const div = document.createElement('div');
+                div.className = 'post-card';
+    
+                let archivoHtml = '';
+                if (post.archivo_url) {
+                    if (post.archivo_nombre && post.archivo_nombre.endsWith('.mp4')) {
+                        archivoHtml = `<video controls style="max-width: 100%;"><source src="${post.archivo_url}" type="video/mp4"></video>`;
+                    } else if (post.archivo_nombre && post.archivo_nombre.endsWith('.mp3')) {
+                        archivoHtml = `<audio controls><source src="${post.archivo_url}" type="audio/mpeg"></audio>`;
+                    } else {
+                        archivoHtml = `<img src="${post.archivo_url}" style="max-width: 100%;">`;
+                    }
+                }
+
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong>${post.autor}</strong>
+                            <span>${post.fecha}</span>
+                            ${post.editado ? '<span>✏️ editado</span>' : ''}
+                            <p>${post.contenido}</p>
+                            ${archivoHtml}
+                        </div>
+                        ${post.es_mio ? `
+                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                            ${post.puede_editar ? `<a href="/posts/editar/${post.id}/">🔧</a>` : ''}
+                            <a href="/posts/borrar/${post.id}/">🗑️</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+             });
+                })
+        .catch(error => console.error('Error:', error));
+}
+
+// Carga los posts al entrar
+cargarPosts();
+
+// Intercepta el submit del formulario para no recargar la página
+document.getElementById('form-post').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const contenido = this.querySelector('textarea[name="contenido"]').value;
+    if (!contenido.trim()) return;
+
     fetch('/posts/api/feed/', {
-        method: 'POST',  // método HTTP POST
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]  // token CSRF
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
         },
-        body: JSON.stringify({ contenido: contenido })  // datos en JSON
+        body: JSON.stringify({ contenido: contenido })
     })
     .then(response => response.json())
     .then(data => {
         if (data.ok) {
-            console.log('Post creado con id:', data.id);
-            location.reload();  // recarga para ver el nuevo post
+            this.querySelector('textarea[name="contenido"]').value = '';
+            cargarPosts();
         }
     })
     .catch(error => console.error('Error:', error));
-}
+});
 </script>
 {% endblock %}

@@ -103,9 +103,13 @@ def api_feed(request):
             data.append({
                 'id': post.id,
                 'autor': post.autor.username or post.autor.email or 'desconocido',
+                'es_mio': post.autor == request.user,
+                'puede_editar': post.puede_editar(),
                 'contenido': post.contenido,
                 'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
                 'editado': post.editado,
+                'archivo_url': post.archivo.url if post.archivo else None,
+                'archivo_nombre': post.archivo.name if post.archivo else None,
             })
         return JsonResponse({'posts': data})
 
