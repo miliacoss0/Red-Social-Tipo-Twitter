@@ -109,3 +109,14 @@ def api_feed(request):
         })
     
     return JsonResponse({'posts': data})
+
+@login_required
+def api_session_info(request):
+    # Devuelve información sobre el token de sesión actual
+    return JsonResponse({
+        'usuario': request.user.username or request.user.email,
+        'session_key': request.session.session_key,  # el token de sesión
+        'esta_autenticado': request.user.is_authenticated,
+        'metodo_http': request.method,  # GET, POST, etc.
+        'cookies': list(request.COOKIES.keys()),  # cookies disponibles
+    })
