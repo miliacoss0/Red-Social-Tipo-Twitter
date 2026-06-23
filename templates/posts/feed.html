@@ -36,6 +36,15 @@ function archivoSeleccionado(input) {
     document.getElementById('menu-archivo').style.display = 'none';
 }
 
+function getCSRFToken() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') return value;
+    }
+    return '';
+}
+
 function cargarPosts() {
     fetch('/posts/api/feed/')
         .then(response => response.json())
@@ -49,6 +58,7 @@ function cargarPosts() {
             data.posts.forEach(post => {
                 const div = document.createElement('div');
                 div.className = 'post-card';
+                div.id = `post-${post.id}`;
     
                 let archivoHtml = '';
                 if (post.archivo_url) {
@@ -63,16 +73,16 @@ function cargarPosts() {
 
                 div.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
+                        <div style="flex: 1;">
                             <strong>${post.autor}</strong>
                             <span>${post.fecha}</span>
                             ${post.editado ? '<span>✏️ editado</span>' : ''}
-                            <p>${post.contenido}</p>
+                            <p class="post-contenido" id="contenido-${post.id}">${post.contenido}</p>
                             ${archivoHtml}
                         </div>
                         ${post.es_mio ? `
                         <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                           ${post.puede_editar ? `<a href="/posts/editar/${post.id}/">🔧</a>` : ''}
+                           ${post.puede_editar ? `<button onclick="editarPost(${post.id})" class="btn-editar" style="background:none; border:none; cursor:pointer; font-size:20px;">✏️</button>` : ''}
                            <button onclick="borrarPost(${post.id})" style="background:none; border:none; cursor:pointer;">🗑️</button>
                         </div>
                         ` : ''}
@@ -84,10 +94,6 @@ function cargarPosts() {
         .catch(error => console.error('Error:', error));
 }
 
-// Carga los posts al entrar
-cargarPosts();
-
-// Intercepta el submit del formulario para no recargar la página
 document.getElementById('form-post').addEventListener('submit', function(e) {
     e.preventDefault();
     const contenido = this.querySelector('textarea[name="contenido"]').value;
@@ -97,7 +103,7 @@ document.getElementById('form-post').addEventListener('submit', function(e) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+            'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify({ contenido: contenido })
     })
@@ -112,17 +118,136 @@ document.getElementById('form-post').addEventListener('submit', function(e) {
 });
 
 function borrarPost(id) {
+    if (!confirm('¿Seguro que quieres eliminar este post?')) return;
+    
     fetch(`/posts/api/borrar/${id}/`, {
         method: 'DELETE',
         headers: {
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+            'X-CSRFToken': getCSRFToken()
         }
     })
     .then(response => response.json())
     .then(data => {
-        if (data.ok) cargarPosts();
+        if (data.ok) {
+            const postElement = document.getElementById(`post-${id}`);
+            if (postElement) {
+                postElement.style.transition = 'opacity 0.3s';
+                postElement.style.opacity = '0';
+                setTimeout(() => postElement.remove(), 300);
+            }
+        }
     })
     .catch(error => console.error('Error:', error));
 }
+
+function editarPost(postId) {
+    const postElement = document.getElementById(`post-${postId}`);
+    const contenidoElement = document.getElementById(`contenido-${postId}`);
+    const contenidoActual = contenidoElement.textContent;
+    
+    const textarea = document.createElement('textarea');
+    textarea.value = contenidoActual;
+    textarea.className = 'edit-textarea';
+    textarea.rows = 3;
+    textarea.style.width = '100%';
+    textarea.style.padding = '8px';
+    textarea.style.border = '2px solid #4A90D9';
+    textarea.style.borderRadius = '4px';
+    textarea.id = `textarea-${postId}`;
+    contenidoElement.replaceWith(textarea);
+    
+    const btnEditar = postElement.querySelector('.btn-editar');
+    btnEditar.textContent = '💾';
+    btnEditar.onclick = function() {
+        guardarEdicion(postId);
+    };
+    
+    textarea.focus();
+}
+
+function guardarEdicion(postId) {
+    const postElement = document.getElementById(`post-${postId}`);
+    const textarea = document.getElementById(`textarea-${postId}`);
+    const nuevoContenido = textarea.value;
+    
+    if (!nuevoContenido.trim()) {
+        alert('El contenido no puede estar vacío');
+        return;
+    }
+    
+    const btnEditar = postElement.querySelector('.btn-editar');
+    btnEditar.textContent = '⏳';
+    btnEditar.disabled = true;
+    
+    fetch(`/posts/api/editar/${postId}/`, {
+        method: 'PUT',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ contenido: nuevoContenido })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            const nuevoContenidoEl = document.createElement('p');
+            nuevoContenidoEl.className = 'post-contenido';
+            nuevoContenidoEl.id = `contenido-${postId}`;
+            nuevoContenidoEl.textContent = data.post.contenido;
+            
+            textarea.replaceWith(nuevoContenidoEl);
+            
+            btnEditar.textContent = '✏️';
+            btnEditar.disabled = false;
+            btnEditar.onclick = function() {
+                editarPost(postId);
+            };
+            
+            const fechaElement = postElement.querySelector('span');
+            if (fechaElement && data.post.fecha_edicion) {
+            }
+            
+            mostrarMensaje('✅ Post actualizado');
+            
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo actualizar'));
+            // Restaurar botón
+            btnEditar.textContent = '✏️';
+            btnEditar.disabled = false;
+            cargarPosts();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar el post');
+        btnEditar.textContent = '✏️';
+        btnEditar.disabled = false;
+        cargarPosts(); 
+    });
+}
+
+function mostrarMensaje(texto) {
+    const mensaje = document.createElement('div');
+    mensaje.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 9999;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: opacity 0.3s;
+    `;
+    mensaje.textContent = texto;
+    document.body.appendChild(mensaje);
+    setTimeout(() => {
+        mensaje.style.opacity = '0';
+        setTimeout(() => mensaje.remove(), 300);
+    }, 3000);
+}
+
+cargarPosts();
 </script>
 {% endblock %}
