@@ -18,4 +18,9 @@ urlpatterns = [
     path('api/borrar/<int:post_id>/', views.api_borrar_post, name='api_borrar_post'),
     path('api/seguir/<int:user_id>/', views.api_seguir, name='api_seguir'),
     path('api/dejar-de-seguir/<int:user_id>/', views.api_dejar_de_seguir, name='api_dejar_de_seguir'),
+    path('api/editar/<int:post_id>/', views.api_editar_post, name='api_editar_post'),
+    path('api/usuarios/', views.api_usuarios, name='api_usuarios'),
+    path('api/hashtags/', views.api_hashtags, name='api_hashtags'),
+    path('api/hashtags/<str:tema>/', views.api_hashtag_detalle, name='api_hashtag_detalle'),
+    path('api/menciones/', views.api_menciones, name='api_menciones'),
 ]
