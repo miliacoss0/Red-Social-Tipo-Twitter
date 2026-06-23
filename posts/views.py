@@ -67,28 +67,22 @@ def borrar_post(request, post_id):
 
 @login_required
 def lista_usuarios(request):
-    q = request.GET.get('q', '')
-    usuarios = User.objects.exclude(id=request.user.id)
-    if q:
-        usuarios = usuarios.filter(username__icontains=q)
-    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
-    for usuario in usuarios:
-        usuario.ya_sigo = usuario.id in siguiendo
-        usuario.cant_seguidores = Follow.objects.filter(seguido=usuario).count()
-    return render(request, 'posts/usuarios.html', {'usuarios': usuarios, 'q': q})
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
+    return render(request, 'posts/usuarios.html') 
 
 @login_required
 def hashtags(request):
-    temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 'series', 'lectura', 'estudio', 'trabajo']
-    return render(request, 'posts/hashtags.html', {'temas': temas})
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
+    return render(request, 'posts/hashtags.html')
 
 @login_required
 def hashtag_detalle(request, tema):
-    posts = Post.objects.filter(contenido__icontains=f'#{tema}').order_by('-fecha')
-    return render(request, 'posts/hashtag_detalle.html', {'tema': tema, 'posts': posts})
+    """Esta vista ya no se usa, la reemplaza la API"""
+    return redirect('hashtags')  
 
 @login_required
 def menciones(request):
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
     return render(request, 'posts/menciones.html')
 
 #funciones para que la pagina no recargue

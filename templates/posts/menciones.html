@@ -1,8 +1,60 @@
 {% extends 'base.html' %}
 
 {% block contenido %}
-<h2>@Menciones</h2>
-<div class="post-card">
-    <p>Próximamente... XD</p>
+<div class="menciones-container">
+    <h2>Menciones</h2>
+    
+    <div id="menciones-lista">
+        <div class="loading">Cargando menciones...</div>
+    </div>
 </div>
+
+<script>
+function getCSRFToken() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') return value;
+    }
+    return '';
+}
+
+function cargarMenciones() {
+    fetch('/posts/api/menciones/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('menciones-lista');
+            
+            if (!data.menciones || data.menciones.length === 0) {
+                container.innerHTML = '<p>No te han mencionado aún</p>';
+                return;
+            }
+            
+            container.innerHTML = data.menciones.map(mention => `
+                <div class="mencion-card" style="
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin: 12px 0;
+                    background: #f9f9f9;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>@${mention.autor}</strong>
+                        <small style="color: #666;">${mention.fecha}</small>
+                    </div>
+                    <p style="margin: 8px 0;">${mention.contenido}</p>
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('menciones-lista').innerHTML = 
+                '<p style="color: red;">Error al cargar menciones</p>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarMenciones();
+});
+</script>
 {% endblock %}
