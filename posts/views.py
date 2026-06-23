@@ -132,3 +132,11 @@ def api_session_info(request):
         'metodo_http': request.method,  # GET, POST, etc.
         'cookies': list(request.COOKIES.keys()),  # cookies disponibles
     })
+    
+@login_required
+def api_borrar_post(request, post_id):
+    if request.method == 'DELETE':
+        post = get_object_or_404(Post, id=post_id, autor=request.user)
+        post.delete()
+        return JsonResponse({'ok': True})
+    return JsonResponse({'ok': False}, status=405)

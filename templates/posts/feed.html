@@ -72,8 +72,8 @@ function cargarPosts() {
                         </div>
                         ${post.es_mio ? `
                         <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                            ${post.puede_editar ? `<a href="/posts/editar/${post.id}/">🔧</a>` : ''}
-                            <a href="/posts/borrar/${post.id}/">🗑️</a>
+                           ${post.puede_editar ? `<a href="/posts/editar/${post.id}/">🔧</a>` : ''}
+                           <button onclick="borrarPost(${post.id})" style="background:none; border:none; cursor:pointer;">🗑️</button>
                         </div>
                         ` : ''}
                     </div>
@@ -110,5 +110,19 @@ document.getElementById('form-post').addEventListener('submit', function(e) {
     })
     .catch(error => console.error('Error:', error));
 });
+
+function borrarPost(id) {
+    fetch(`/posts/api/borrar/${id}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) cargarPosts();
+    })
+    .catch(error => console.error('Error:', error));
+}
 </script>
 {% endblock %}
