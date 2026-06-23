@@ -140,3 +140,19 @@ def api_borrar_post(request, post_id):
         post.delete()
         return JsonResponse({'ok': True})
     return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario_a_seguir = get_object_or_404(User, user_id)
+        Follow.objects.get_or_create(seguidor=request.user, seguido=usuario_a_seguir)
+        return JsonResponse({'ok': True, 'siguiendo': True})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_dejar_de_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario = get_object_or_404(User, id=user_id)
+        Follow.objects.filter(seguidor=request.user, seguido=usuario).delete()
+        return JsonResponse({'ok': True, 'siguiendo': False})
+    return JsonResponse({'ok': False}, status=405)

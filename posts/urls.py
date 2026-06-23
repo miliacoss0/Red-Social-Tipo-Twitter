@@ -16,4 +16,6 @@ urlpatterns = [
     path('api/feed/', views.api_feed, name='api_feed'),
     path('api/session/', views.api_session_info, name='api_session'),
     path('api/borrar/<int:post_id>/', views.api_borrar_post, name='api_borrar_post'),
+    path('api/seguir/<int:user_id>/', views.api_seguir, name='api_seguir'),
+    path('api/dejar-de-seguir/<int:user_id>/', views.api_dejar_de_seguir, name='api_dejar_de_seguir'),
 ]
