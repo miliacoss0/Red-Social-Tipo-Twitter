@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .models import Post, Follow
 from django.utils import timezone
+from django.http import JsonResponse
 
 @login_required
 def feed(request):
@@ -89,3 +90,41 @@ def hashtag_detalle(request, tema):
 @login_required
 def menciones(request):
     return render(request, 'posts/menciones.html')
+
+@login_required
+def api_feed(request):
+    if request.method == 'GET':
+        siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
+        posts = posts.order_by('-fecha')
+        
+        data = []
+        for post in posts:
+            data.append({
+                'id': post.id,
+                'autor': post.autor.username or post.autor.email or 'desconocido',
+                'contenido': post.contenido,
+                'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+                'editado': post.editado,
+            })
+        return JsonResponse({'posts': data})
+
+    elif request.method == 'POST':
+        import json
+        body = json.loads(request.body)
+        contenido = body.get('contenido', '')
+        if contenido:
+            post = Post.objects.create(autor=request.user, contenido=contenido)
+            return JsonResponse({'ok': True, 'id': post.id}, status=201)
+        return JsonResponse({'ok': False, 'error': 'contenido vacío'}, status=400)
+
+@login_required
+def api_session_info(request):
+    # Devuelve información sobre el token de sesión actual
+    return JsonResponse({
+        'usuario': request.user.username or request.user.email,
+        'session_key': request.session.session_key,  # el token de sesión
+        'esta_autenticado': request.user.is_authenticated,
+        'metodo_http': request.method,  # GET, POST, etc.
+        'cookies': list(request.COOKIES.keys()),  # cookies disponibles
+    })

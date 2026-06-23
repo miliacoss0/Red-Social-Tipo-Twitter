@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path('feed/', views.feed, name='feed'),
@@ -12,4 +13,6 @@ urlpatterns = [
     path('hashtags/', views.hashtags, name='hashtags'),
     path('menciones/', views.menciones, name='menciones'),
     path('hashtags/<str:tema>/', views.hashtag_detalle, name='hashtag_detalle'),
+    path('api/feed/', views.api_feed, name='api_feed'),
+    path('api/session/', views.api_session_info, name='api_session'),
 ]
