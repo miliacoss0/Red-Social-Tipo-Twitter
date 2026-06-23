@@ -99,4 +99,26 @@ fetch('/posts/api/feed/')
     })
     .catch(error => console.error('Error:', error));
 </script>
+
+<script>
+// Ejemplo de POST via fetch para crear un post
+function crearPostFetch(contenido) {
+    fetch('/posts/api/feed/', {
+        method: 'POST',  // método HTTP POST
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]  // token CSRF
+        },
+        body: JSON.stringify({ contenido: contenido })  // datos en JSON
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            console.log('Post creado con id:', data.id);
+            location.reload();  // recarga para ver el nuevo post
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
 {% endblock %}

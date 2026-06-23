@@ -93,22 +93,30 @@ def menciones(request):
 
 @login_required
 def api_feed(request):
-    # GET: devuelve los posts en formato JSON
-    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
-    posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
-    posts = posts.order_by('-fecha')
-    
-    data = []
-    for post in posts:
-        data.append({
-            'id': post.id,
-            'autor': post.autor.username if post.autor.email else 'desconocido',
-            'contenido': post.contenido,
-            'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
-            'editado': post.editado,
-        })
-    
-    return JsonResponse({'posts': data})
+    if request.method == 'GET':
+        siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
+        posts = posts.order_by('-fecha')
+        
+        data = []
+        for post in posts:
+            data.append({
+                'id': post.id,
+                'autor': post.autor.username or post.autor.email or 'desconocido',
+                'contenido': post.contenido,
+                'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+                'editado': post.editado,
+            })
+        return JsonResponse({'posts': data})
+
+    elif request.method == 'POST':
+        import json
+        body = json.loads(request.body)
+        contenido = body.get('contenido', '')
+        if contenido:
+            post = Post.objects.create(autor=request.user, contenido=contenido)
+            return JsonResponse({'ok': True, 'id': post.id}, status=201)
+        return JsonResponse({'ok': False, 'error': 'contenido vacío'}, status=400)
 
 @login_required
 def api_session_info(request):
