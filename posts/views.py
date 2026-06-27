@@ -4,6 +4,21 @@ from django.contrib.auth.models import User
 from .models import Post, Follow
 from django.utils import timezone
 from django.http import JsonResponse
+from functools import wraps
+from .utils import api_required
+
+def api_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # Verifica si la peticion acepta JSON
+        accept_header = request.META.get('HTTP_ACCEPT', '')
+        if 'application/json' not in accept_header:
+            return JsonResponse(
+                {'error': 'Esta URL solo acepta peticiones API con Accept: application/json'},
+                status=406
+            )
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 @login_required
 def feed(request):
@@ -92,6 +107,7 @@ def menciones(request):
     return render(request, 'posts/menciones.html')
 
 @login_required
+@api_required  # NUEVO: Decorador para forzar JSON
 def api_feed(request):
     if request.method == 'GET':
         siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
@@ -111,20 +127,58 @@ def api_feed(request):
 
     elif request.method == 'POST':
         import json
-        body = json.loads(request.body)
-        contenido = body.get('contenido', '')
-        if contenido:
-            post = Post.objects.create(autor=request.user, contenido=contenido)
-            return JsonResponse({'ok': True, 'id': post.id}, status=201)
-        return JsonResponse({'ok': False, 'error': 'contenido vacío'}, status=400)
-
+        try:
+            body = json.loads(request.body)
+            contenido = body.get('contenido', '')
+            if contenido:
+                post = Post.objects.create(autor=request.user, contenido=contenido)
+                return JsonResponse({'ok': True, 'id': post.id}, status=201)
+            return JsonResponse({'ok': False, 'error': 'contenido vacio'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'ok': False, 'error': 'JSON invalido'}, status=400)
+        
 @login_required
+@api_required  
 def api_session_info(request):
-    # Devuelve información sobre el token de sesión actual
+    #Verificar autenticacion antes de devolver datos
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'No autenticado'}, status=401)
+    
     return JsonResponse({
         'usuario': request.user.username or request.user.email,
-        'session_key': request.session.session_key,  # el token de sesión
+        'session_key': request.session.session_key,
         'esta_autenticado': request.user.is_authenticated,
-        'metodo_http': request.method,  # GET, POST, etc.
-        'cookies': list(request.COOKIES.keys()),  # cookies disponibles
+        'metodo_http': request.method,
+        'cookies': list(request.COOKIES.keys()),
+    })
+
+#Endpoint para verificar posts nuevos (polling)
+@login_required
+@api_required
+def api_nuevos_posts(request):
+    ultimo_id = request.GET.get('ultimo_id', 0)
+    try:
+        ultimo_id = int(ultimo_id)
+    except ValueError:
+        ultimo_id = 0
+    
+    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+    nuevos = Post.objects.filter(
+        autor__in=siguiendo
+    ).filter(id__gt=ultimo_id).order_by('id')
+    
+    data = []
+    for post in nuevos:
+        data.append({
+            'id': post.id,
+            'autor': post.autor.username,
+            'contenido': post.contenido,
+            'fecha': post.fecha.strftime('%H:%M'),
+            'editado': post.editado,
+        })
+    
+    return JsonResponse({
+        'nuevos': data,
+        'hay_nuevos': bool(data),
+        'ultimo_id': max([p.id for p in nuevos]) if nuevos else ultimo_id
     })
