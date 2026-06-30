@@ -107,8 +107,15 @@ def menciones(request):
     return render(request, 'posts/menciones.html')
 
 @login_required
-@api_required  # NUEVO: Decorador para forzar JSON
+@api_required  # Decorador para forzar JSON
+@login_required
 def api_feed(request):
+    #Verificar si la peticion espera JSON
+    accept_header = request.META.get('HTTP_ACCEPT', '')
+    if 'application/json' not in accept_header and 'text/html' in accept_header:
+        # Si es una peticion normal del navegador, redirigir al feed HTML
+        return redirect('feed')
+    
     if request.method == 'GET':
         siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
         posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
@@ -136,9 +143,10 @@ def api_feed(request):
             return JsonResponse({'ok': False, 'error': 'contenido vacio'}, status=400)
         except json.JSONDecodeError:
             return JsonResponse({'ok': False, 'error': 'JSON invalido'}, status=400)
+    
+    return JsonResponse({'error': 'Metodo no permitido'}, status=405)
         
 @login_required
-@api_required  
 def api_session_info(request):
     #Verificar autenticacion antes de devolver datos
     if not request.user.is_authenticated:
@@ -154,8 +162,8 @@ def api_session_info(request):
 
 #Endpoint para verificar posts nuevos (polling)
 @login_required
-@api_required
 def api_nuevos_posts(request):
+    
     ultimo_id = request.GET.get('ultimo_id', 0)
     try:
         ultimo_id = int(ultimo_id)
