@@ -6,15 +6,14 @@ def api_required(view_func):
     """
     Decorador para forzar que una vista solo acepte peticiones API.
     Verifica que el header Accept contenga application/json.
+    Si no, redirige a feed en lugar de dar error 406.
     """
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         accept_header = request.META.get('HTTP_ACCEPT', '')
         if 'application/json' not in accept_header:
-            return JsonResponse(
-                {'error': 'Esta URL solo acepta peticiones API con Accept: application/json'},
-                status=406
-            )
+            from django.shortcuts import redirect
+            return redirect('feed')
         return view_func(request, *args, **kwargs)
     return wrapper
 
