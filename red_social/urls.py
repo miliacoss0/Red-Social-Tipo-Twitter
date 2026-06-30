@@ -9,4 +9,5 @@ urlpatterns = [
     path('', include('usuarios.urls')),
     path('posts/', include('posts.urls')),
     path('feed/', include('tweets.urls')),
+    path('tweets/', include('tweets.urls')), 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
