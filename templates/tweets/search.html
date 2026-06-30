@@ -7,7 +7,7 @@
 <div style="max-width: 600px; margin: 0 auto;">
     <h1>Buscador</h1>
     
-    <!-- NUEVO: Formulario de busqueda con id para interceptar -->
+    <!-- Formulario de busqueda con id para interceptar -->
     <form id="search-form" style="display: flex; gap: 10px; margin-bottom: 30px;">
         <input type="text" id="search-input" 
                placeholder="Buscar tweets, usuarios o #hashtags..." 
@@ -17,26 +17,26 @@
         </button>
     </form>
     
-    <!-- NUEVO: Titulo de resultados se actualiza via JavaScript -->
+    <!-- Titulo de resultados se actualiza via JavaScript -->
     <h2 id="resultados-titulo">Resultados</h2>
     
-    <!-- NUEVO: Contenedor para resultados via API -->
+    <!-- Contenedor para resultados via API -->
     <div id="resultados-container">
         <p style="text-align: center; color: #586069;">Realiza una busqueda para ver resultados.</p>
     </div>
 </div>
 
-<!-- NUEVO: Cargar el script de API de tweets -->
+<!-- Cargar el script de API de tweets -->
 <script src="{% static 'js/tweets-api.js' %}"></script>
 
-<!-- NUEVO: Script para manejar la busqueda con fetch -->
+<!-- Script para manejar la busqueda con fetch -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('search-form');
     const input = document.getElementById('search-input');
     const titulo = document.getElementById('resultados-titulo');
     
-    // NUEVO: Verificar si hay parametro de busqueda en la URL
+    // Verificar si hay parametro de busqueda en la URL
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get('q');
     if (queryParam) {
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         buscarTweets(queryParam, 'resultados-container');
     }
     
-    // NUEVO: Interceptar envio del formulario
+    // Interceptar envio del formulario
     form.addEventListener('submit', function(e) {
         e.preventDefault();  // Evitar envio tradicional
         const query = input.value.trim();
