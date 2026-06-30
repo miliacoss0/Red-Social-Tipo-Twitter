@@ -75,8 +75,17 @@
 <script>
 // Fetch: hace una petición GET a nuestra API
 // En vez de recargar la página, trae los datos en JSON y los muestra
-fetch('/posts/api/feed/')
-    .then(response => response.json())  // convierte la respuesta a JSON
+fetch('/posts/api/feed/', {
+    headers: {
+        'Accept': 'application/json' // Forzar respuesta JSON
+    }
+})
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
         const container = document.getElementById('posts-container');
         
@@ -97,28 +106,42 @@ fetch('/posts/api/feed/')
             container.appendChild(div);
         });
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        const container = document.getElementById('posts-container');
+        container.innerHTML = '<p style="color: red;">Error al cargar los posts. Intenta recargar la página.</p>';
+    });
 </script>
 
 <script>
+//  Script para crear post con header Accept forzado
 // Ejemplo de POST via fetch para crear un post
 function crearPostFetch(contenido) {
     fetch('/posts/api/feed/', {
         method: 'POST',  // método HTTP POST
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]  // token CSRF
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1],  // token CSRF
+            'Accept': 'application/json'  // Forzar respuesta JSON
         },
         body: JSON.stringify({ contenido: contenido })  // datos en JSON
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.ok) {
             console.log('Post creado con id:', data.id);
             location.reload();  // recarga para ver el nuevo post
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear el post: ' + error.message);
+    });
 }
 </script>
 {% endblock %}
