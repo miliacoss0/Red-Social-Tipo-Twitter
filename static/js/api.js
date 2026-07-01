@@ -119,6 +119,60 @@ function showLoading(containerId, message = 'Cargando...') {
     }
 }
 
+// Funcion para buscar tweets via API
+function buscarTweets(query, containerId = 'resultados-container') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (!query || query.trim() === '') {
+        container.innerHTML = '<p style="text-align: center; color: #586069;">Ingresa un termino de busqueda.</p>';
+        return;
+    }
+    
+    container.innerHTML = '<div style="text-align: center; padding: 20px;">Buscando...</div>';
+    
+    apiRequest(`/tweets/api/buscar/?q=${encodeURIComponent(query)}`)
+        .then(data => {
+            container.innerHTML = '';
+            
+            if (data.results.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: #586069;">No se encontraron resultados para "${data.query}"</p>`;
+                return;
+            }
+            
+            data.results.forEach(tweet => {
+                const div = document.createElement('div');
+                div.className = 'tweet-card';
+                div.style.cssText = 'border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;';
+                
+                let hashtagsHtml = '';
+                if (tweet.hashtags && tweet.hashtags.length > 0) {
+                    hashtagsHtml = '<div style="margin-top: 10px;">';
+                    tweet.hashtags.forEach(tag => {
+                        hashtagsHtml += `<a href="/tweets/tag/${tag}/" style="color: #0366d6; text-decoration: none; margin-right: 10px; font-size: 14px;">#${tag}</a>`;
+                    });
+                    hashtagsHtml += '</div>';
+                }
+                
+                div.innerHTML = `
+                    <div style="margin-bottom: 10px; color: #0366d6;">
+                        <strong>${tweet.author}</strong>
+                        <small style="color: #586069;">${tweet.created_at}</small>
+                    </div>
+                    <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
+                        ${tweet.content}
+                    </div>
+                    ${hashtagsHtml}
+                `;
+                container.appendChild(div);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `<p style="color: red; text-align: center;">Error en la busqueda: ${error.message}</p>`;
+        });
+}
+
 // Inicializar al cargar la pagina
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar sesion
@@ -137,3 +191,4 @@ window.verificarSesion = verificarSesion;
 window.cargarTemasInteres = cargarTemasInteres;
 window.showError = showError;
 window.showLoading = showLoading;
+window.buscarTweets = buscarTweets;
