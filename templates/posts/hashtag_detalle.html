@@ -1,27 +1,93 @@
 {% extends 'base.html' %}
 
 {% block contenido %}
-<h2>#{{ tema }}</h2>
+<h2>#<span id="tema-nombre">{{ tema }}</span></h2>
 
-{% for post in posts %}
-<div class="post-card">
-    <strong>{{ post.autor.username }}</strong>
-    <span>{{ post.fecha }}</span>
-    <p>{{ post.contenido }}</p>
-    {% if post.archivo %}
-        {% if post.archivo.name|slice:"-4:" == ".mp4" %}
-            <video controls style="max-width: 100%;">
-                <source src="{{ post.archivo.url }}" type="video/mp4">
-            </video>
-        {% else %}
-            <img src="{{ post.archivo.url }}" style="max-width: 100%;">
-        {% endif %}
-    {% endif %}
+<!-- Contenedor para posts cargados via API -->
+<div id="posts-container">
+    <p style="text-align: center; color: #586069;">Cargando posts...</p>
 </div>
-{% empty %}
-<div class="post-card">
-    <p>No hay posts con #{{ tema }} todavía. Sé el primero en publicar con el #{{ tema }} </p>
-</div>
-{% endfor %}
 
+<!-- Script para cargar posts del hashtag via API -->
+<script>
+// Funcion para cargar posts de un hashtag especifico
+function cargarPostsHashtag(tema) {
+    const container = document.getElementById('posts-container');
+    
+    fetch(`/posts/api/hashtags/${tema}/`, {
+        headers: {
+            'Accept': 'application/json'  // Forzar respuesta JSON
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        container.innerHTML = '';
+        
+        // Actualizar el titulo con el total de posts
+        document.getElementById('tema-nombre').textContent = `${data.tema} (${data.total} posts)`;
+        
+        if (data.posts.length === 0) {
+            container.innerHTML = `
+                <div class="post-card">
+                    <p>No hay posts con #${data.tema} todavía. Sé el primero en publicar con el #${data.tema}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        data.posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            
+            // Construir HTML del archivo si existe
+            let archivoHtml = '';
+            if (post.archivo) {
+                if (post.es_video) {
+                    archivoHtml = `
+                        <video controls style="max-width: 100%; display: block; margin: 10px auto;">
+                            <source src="${post.archivo}" type="video/mp4">
+                        </video>
+                    `;
+                } else if (post.es_audio) {
+                    archivoHtml = `
+                        <audio controls style="max-width: 100%; display: block; margin: 10px auto;">
+                            <source src="${post.archivo}" type="audio/mpeg">
+                        </audio>
+                    `;
+                } else if (post.es_imagen) {
+                    archivoHtml = `<img src="${post.archivo}" style="max-width: 100%; display: block; margin: 10px auto;">`;
+                }
+            }
+            
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <strong>${post.autor}</strong>
+                        <span>${post.fecha}</span>
+                        ${post.editado ? '<span>✏️ editado</span>' : ''}
+                        <p>${post.contenido}</p>
+                        ${archivoHtml}
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        container.innerHTML = '<p style="color: red;">Error al cargar los posts. Intenta recargar la página.</p>';
+    });
+}
+
+// Cargar posts al cargar la pagina
+document.addEventListener('DOMContentLoaded', function() {
+    const tema = '{{ tema }}';
+    cargarPostsHashtag(tema);
+});
+</script>
 {% endblock %}

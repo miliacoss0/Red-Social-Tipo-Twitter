@@ -3,10 +3,59 @@
 {% block contenido %}
 <h2>Hashtags</h2>
 
-{% for tema in temas %}
-<div class="post-card">
-    <a href="{% url 'hashtag_detalle' tema %}">  #{{ tema }}</a>
+<!-- Contenedor para hashtags cargados via API -->
+<div id="hashtags-container">
+    <p style="text-align: center; color: #586069;">Cargando hashtags...</p>
 </div>
-{% endfor %}
 
+<!-- Cargar hashtags via API -->
+<script>
+// Funcion para cargar hashtags via API
+function cargarHashtags() {
+    const container = document.getElementById('hashtags-container');
+    
+    fetch('/posts/api/hashtags/', {
+        headers: {
+            'Accept': 'application/json'  // Forzar respuesta JSON
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        container.innerHTML = '';
+        
+        if (data.hashtags.length === 0) {
+            container.innerHTML = '<p>No hay hashtags disponibles.</p>';
+            return;
+        }
+        
+        data.hashtags.forEach(hashtag => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <a href="/posts/hashtags/${hashtag.nombre}/" style="text-decoration: none; color: inherit;">
+                    <strong>#${hashtag.nombre}</strong>
+                    <span style="font-size: 14px; color: #586069; margin-left: 10px;">
+                        (${hashtag.cantidad} posts)
+                    </span>
+                </a>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        container.innerHTML = '<p style="color: red;">Error al cargar los hashtags. Intenta recargar la página.</p>';
+    });
+}
+
+// Cargar hashtags al cargar la pagina
+document.addEventListener('DOMContentLoaded', function() {
+    cargarHashtags();
+});
+</script>
 {% endblock %}
