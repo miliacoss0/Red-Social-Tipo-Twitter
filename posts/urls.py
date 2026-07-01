@@ -16,4 +16,6 @@ urlpatterns = [
     path('api/feed/', views.api_feed, name='api_feed'),
     path('api/session/', views.api_session_info, name='api_session'),
     path('api/nuevos-posts/', views.api_nuevos_posts, name='api_nuevos_posts'),
+    path('api/hashtags/', views.api_hashtags, name='api_hashtags'),
+    path('api/hashtags/<str:tema>/', views.api_hashtag_detalle, name='api_hashtag_detalle'),
 ]

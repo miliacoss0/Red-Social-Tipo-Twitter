@@ -163,7 +163,7 @@ def api_session_info(request):
 #Endpoint para verificar posts nuevos (polling)
 @login_required
 def api_nuevos_posts(request):
-    
+
     ultimo_id = request.GET.get('ultimo_id', 0)
     try:
         ultimo_id = int(ultimo_id)
@@ -190,3 +190,68 @@ def api_nuevos_posts(request):
         'hay_nuevos': bool(data),
         'ultimo_id': max([p.id for p in nuevos]) if nuevos else ultimo_id
     })
+
+#hastasg API endpoints
+
+@login_required
+def api_hashtags(request):
+    """
+    Devuelve la lista de hashtags con conteo de posts en JSON
+    """
+    temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 
+             'series', 'lectura', 'estudio', 'trabajo']
+    
+    # Contar cuantos posts tiene cada hashtag
+    hashtags_data = []
+    for tema in temas:
+        count = Post.objects.filter(contenido__icontains=f'#{tema}').count()
+        hashtags_data.append({
+            'nombre': tema,
+            'cantidad': count
+        })
+    
+    return JsonResponse({'hashtags': hashtags_data}, status=200)
+
+
+@login_required
+def api_hashtag_detalle(request, tema):
+    """
+    Devuelve los posts de un hashtag especifico en JSON
+    """
+    posts = Post.objects.filter(contenido__icontains=f'#{tema}').order_by('-fecha')
+    
+    data = []
+    for post in posts:
+        # Determinar tipo de archivo
+        archivo_url = None
+        es_video = False
+        es_audio = False
+        es_imagen = False
+        
+        if post.archivo:
+            archivo_url = post.archivo.url
+            nombre = post.archivo.name.lower()
+            if nombre.endswith('.mp4') or nombre.endswith('.webm') or nombre.endswith('.ogg'):
+                es_video = True
+            elif nombre.endswith('.mp3') or nombre.endswith('.wav'):
+                es_audio = True
+            else:
+                es_imagen = True
+        
+        data.append({
+            'id': post.id,
+            'autor': post.autor.username,
+            'contenido': post.contenido,
+            'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+            'editado': post.editado,
+            'archivo': archivo_url,
+            'es_video': es_video,
+            'es_audio': es_audio,
+            'es_imagen': es_imagen,
+        })
+    
+    return JsonResponse({
+        'tema': tema,
+        'posts': data,
+        'total': len(data)
+    }, status=200)
