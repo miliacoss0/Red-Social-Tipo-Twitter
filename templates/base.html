@@ -15,6 +15,7 @@
         <a href="/">Inicio</a>
         <a href="{% url 'feed' %}">Feed</a>
         <a href="{% url 'hashtags' %}">Hashtags</a>
+        <a href="{% url 'mensajes:inbox' %}" class="nav-link">💬 Mensajes</a>
         <a href="/tweets/">Tweets</a>
         {% if user.is_authenticated %}
             <span style="color: white; margin-left: 20px;">Bienvenido, {{ user.username }}</span>
