@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block title %}Chat con {{ otro_usuario.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex align-items-center">
+                <a href="{% url 'mensajes:inbox' %}" class="text-white me-3 text-decoration-none">
+                    ← Volver
+                </a>
+
+                <img src="{% if otro_usuario.avatar %}{{ otro_usuario.avatar.url }}{% else %}/static/default-avatar.png{% endif %}"
+                     alt="Avatar" class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+
+                <span class="ms-2 fw-bold">{{ otro_usuario.username }}</span>
+
+                <span class="ms-2 text-white-50 small">
+                    {% if otro_usuario.is_online %}
+                        <span class="badge bg-success">En línea</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body chat-box" id="chat-box"
+             style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+
+            {% for mensaje in mensajes %}
+                <div class="mb-3 {% if mensaje.emisor == request.user %}text-end{% endif %}"
+                     data-mensaje-id="{{ mensaje.id }}">
+
+                    <div class="d-inline-block p-2 rounded
+                        {% if mensaje.emisor == request.user %}
+                            bg-primary text-white
+                        {% else %}
+                            bg-white shadow-sm
+                        {% endif %}"
+                        style="max-width: 70%;">
+
+                        <small class="d-block text-muted small">
+                            {{ mensaje.emisor.username }}
+                        </small>
+
+                        {{ mensaje.contenido|linebreaks }}
+
+                        <small class="d-block text-muted small mt-1">
+                            {{ mensaje.fecha_envio|date:"H:i" }}
+
+                            {% if mensaje.leido and mensaje.emisor != request.user %}
+                                <span class="text-success">✓✓</span>
+                            {% elif mensaje.emisor == request.user %}
+                                <span class="text-secondary">✓</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+
+        <div class="card-footer bg-white">
+            <form id="chat-form" class="d-flex">
+                {% csrf_token %}
+                <input type="text" id="mensaje-input" class="form-control me-2"
+                       placeholder="Escribe un mensaje..." required autocomplete="off">
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const chatBox = document.getElementById('chat-box');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('mensaje-input');
+
+    const receptorId = Number("{{ otro_usuario.id|escapejs }}");
+    const conversacionId = Number("{{ conversacion.id|escapejs }}");
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+    input.focus();
+
+    function getLastMessageId() {
+        const last = chatBox.querySelector('[data-mensaje-id]:last-child');
+        return last ? parseInt(last.dataset.mensajeId) : 0;
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const contenido = input.value.trim();
+        if (!contenido) return;
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('/mensajes/api/enviar/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                receptor_id: receptorId,
+                contenido: contenido
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'enviado') {
+
+                const div = document.createElement('div');
+                div.className = 'mb-3 text-end';
+                div.dataset.mensajeId = data.id || getLastMessageId() + 1;
+
+                div.innerHTML = `
+                    <div class="d-inline-block p-2 rounded bg-primary text-white"
+                         style="max-width: 70%;">
+                        ${data.contenido}
+                        <small class="d-block text-white-50 small mt-1">
+                            ${new Date(data.fecha).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </small>
+                    </div>
+                `;
+
+                chatBox.appendChild(div);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                input.value = '';
+                input.focus();
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    });
+
+    function cargarNuevosMensajes() {
+        fetch(`/mensajes/api/mensajes/${conversacionId}/`)
+            .then(r => r.json())
+            .then(data => {
+
+                if (!data.mensajes) return;
+
+                const ultimoId = getLastMessageId();
+
+                let hayNuevos = false;
+
+                data.mensajes.forEach(msg => {
+
+                    if (msg.id > ultimoId && !msg.es_mio) {
+
+                        hayNuevos = true;
+
+                        const div = document.createElement('div');
+                        div.className = 'mb-3';
+                        div.dataset.mensajeId = msg.id;
+
+                        div.innerHTML = `
+                            <div class="d-inline-block p-2 rounded bg-white shadow-sm"
+                                 style="max-width: 70%;">
+
+                                <small class="d-block text-muted small">
+                                    ${msg.emisor}
+                                </small>
+
+                                ${msg.contenido}
+
+                                <small class="d-block text-muted small mt-1">
+                                    ${new Date(msg.fecha).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                    ${msg.leido ? '<span class="text-success">✓✓</span>' : ''}
+                                </small>
+
+                            </div>
+                        `;
+
+                        chatBox.appendChild(div);
+
+                        // marcar como leído
+                        fetch(`/mensajes/api/marcar-leido/${msg.id}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            }
+                        });
+                    }
+                });
+
+                if (hayNuevos) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            })
+            .catch(err => console.error('Error cargando mensajes:', err));
+    }
+
+    setInterval(cargarNuevosMensajes, 3000);
+});
+</script>
+
+<style>
+.chat-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-box .mb-3 {
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+{% endblock %}
