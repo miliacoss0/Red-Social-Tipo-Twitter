@@ -3,6 +3,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from mensajes import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
@@ -10,4 +12,7 @@ urlpatterns = [
     path('posts/', include('posts.urls')),
     path('feed/', include('tweets.urls')),
     path('tweets/', include('tweets.urls')), 
+    path('mensajes/', include('mensajes.urls')),
+    path('api/conversaciones/', views.api_conversaciones),
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
