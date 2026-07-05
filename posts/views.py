@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from .models import Post, Follow
 from django.utils import timezone
 from django.http import JsonResponse
 from functools import wraps
-from .utils import api_required
+from .models import Post, Follow, Comentario
 
 def api_required(view_func):
     @wraps(view_func)
@@ -106,7 +105,6 @@ def hashtag_detalle(request, tema):
 def menciones(request):
     return render(request, 'posts/menciones.html')
 
-@login_required
 @api_required  # Decorador para forzar JSON
 @login_required
 def api_feed(request):
@@ -255,3 +253,133 @@ def api_hashtag_detalle(request, tema):
         'posts': data,
         'total': len(data)
     }, status=200)
+
+# sistema de likes
+
+@login_required
+def like_toggle(request, post_id):
+    """Versión HTML para redirección"""
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+    else:
+        post.likes.add(request.user)
+    
+    return redirect('feed')
+
+@login_required
+@api_required
+def api_like_toggle(request, post_id):
+    """Alternar like en un post (API)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        action = 'unliked'
+    else:
+        post.likes.add(request.user)
+        action = 'liked'
+    
+    return JsonResponse({
+        'action': action,
+        'likes_count': post.likes.count(),
+        'post_id': post.id
+    })
+
+# sistema de comentarios
+
+@login_required
+def comentar_post(request, post_id):
+    """Versión HTML para comentar"""
+    if request.method != 'POST':
+        return redirect('feed')
+    
+    post = get_object_or_404(Post, id=post_id)
+    contenido = request.POST.get('contenido', '').strip()
+    
+    if contenido:
+        Comentario.objects.create(
+            post=post,
+            autor=request.user,
+            contenido=contenido
+        )
+    
+    return redirect('feed')
+
+@login_required
+@api_required
+def api_comentarios(request, post_id):
+    """Obtener y crear comentarios de un post (API)"""
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.method == 'GET':
+        comentarios = post.comentarios.select_related('autor').order_by('fecha')
+        
+        data = []
+        for c in comentarios:
+            data.append({
+                'id': c.id,
+                'autor': c.autor.username,
+                'autor_id': c.autor.id,
+                'contenido': c.contenido,
+                'fecha': c.fecha.strftime('%d/%m/%Y %H:%M'),
+                'editado': c.editado,
+                'puede_editar': c.autor == request.user
+            })
+        
+        return JsonResponse({'comentarios': data})
+    
+    elif request.method == 'POST':
+        import json
+        try:
+            body = json.loads(request.body)
+            contenido = body.get('contenido', '').strip()
+            
+            if not contenido:
+                return JsonResponse({'error': 'Contenido vacío'}, status=400)
+            
+            comentario = Comentario.objects.create(
+                post=post,
+                autor=request.user,
+                contenido=contenido
+            )
+            
+            return JsonResponse({
+                'id': comentario.id,
+                'autor': comentario.autor.username,
+                'contenido': comentario.contenido,
+                'fecha': comentario.fecha.strftime('%d/%m/%Y %H:%M')
+            }, status=201)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'JSON inválido'}, status=400)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+# notificaciones
+
+@login_required
+def notificaciones(request):
+    """Vista de notificaciones"""
+    return render(request, 'posts/notificaciones.html')
+
+@login_required
+@api_required
+def api_notificaciones(request):
+    """Obtener notificaciones del usuario (API)"""
+    # Por ahora solo devolvemos notificaciones de prueba
+    # En producción, esto vendría de un modelo de Notificaciones
+    return JsonResponse({
+        'notificaciones': [
+            {
+                'id': 1,
+                'mensaje': 'Bienvenido a la red social',
+                'leido': False,
+                'fecha': '2024-01-01T00:00:00'
+            }
+        ]
+    })

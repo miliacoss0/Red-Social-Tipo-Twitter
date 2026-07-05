@@ -1,4 +1,3 @@
-# NUEVO: Utilidades para APIs
 from django.http import JsonResponse
 from functools import wraps
 
