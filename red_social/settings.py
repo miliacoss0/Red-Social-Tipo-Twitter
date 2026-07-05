@@ -85,8 +85,8 @@ SOCIALACCOUNT_PROVIDERS = {
 # confi de cuentas
 ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Login con email
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
 # ============ REDIRECCIONES ============
@@ -235,6 +235,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+SOCIALACCOUNT_ADAPTER = 'usuarios.adapter.CustomSocialAccountAdapter'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
