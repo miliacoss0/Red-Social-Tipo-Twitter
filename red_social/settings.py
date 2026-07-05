@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 import environ
+import cloudinary
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',  # ← NUEVO: Necesario para django-allauth
+    'django.contrib.sites',  
     'posts',   #app 
 
     # Aplicaciones de django-allauth (NUEVO)
@@ -52,6 +53,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'usuarios',  # app de usuarios
     'tweets',    # añadimos esta linea 
+    'follows',
+    'mensajes',  
 
 ]
 
@@ -158,6 +161,68 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# cache con redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{env("REDIS_HOST", default="localhost")}:{env("REDIS_PORT", default="6379")}/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PARSER_CLASS': 'redis.connection.HiredisParser',
+            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 50,
+                'timeout': 20,
+            },
+        },
+        'KEY_PREFIX': 'redsocial',
+    }
+}
+
+# session engine con cache
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# django channels
+INSTALLED_APPS += [
+    'channels',
+]
+
+ASGI_APPLICATION = 'red_social.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [(env('REDIS_HOST', default='localhost'), int(env('REDIS_PORT', default='6379')))],
+        },
+    },
+}
+
+# cloudinary
+if env('CLOUDINARY_CLOUD_NAME'):
+    INSTALLED_APPS += [
+        'cloudinary_storage',
+        'cloudinary',
+    ]
+    
+    import cloudinary
+    cloudinary.config(
+        cloud_name=env('CLOUDINARY_CLOUD_NAME'),
+        api_key=env('CLOUDINARY_API_KEY'),
+        api_secret=env('CLOUDINARY_API_SECRET'),
+        secure=True
+    )
+    
+    # Configurar almacenamiento para archivos multimedia
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    
+    # Opciones de Cloudinary
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
+        'API_KEY': env('CLOUDINARY_API_KEY'),
+        'API_SECRET': env('CLOUDINARY_API_SECRET'),
+        'EXIF_DISPLAY': True,
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
