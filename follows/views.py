@@ -33,7 +33,8 @@ def toggle_follow(request, user_id):
     return JsonResponse({
         'status': action,
         'is_following': is_following,
-        'followers_count': user_to_follow.followers.count()
+        'followers_count': user_to_follow.followers.count(),
+        'username': user_to_follow.username  # Añadimos username para la notificación
     })
 
 @login_required
