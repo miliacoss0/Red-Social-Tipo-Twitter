@@ -17,6 +17,7 @@
             Seguir
         {% endif %}
     </button>
+    <a href="{% url 'mensajes:conversacion' usuario.id %}" class="btn">💬 Mensaje</a>
 </div>
 {% empty %}
 <p>No hay otros usuarios todavía.</p>
