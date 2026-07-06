@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
 <h2>Usuarios</h2>
@@ -6,16 +7,22 @@
 {% for usuario in usuarios %}
 <div>
     <strong>{{ usuario.username }}</strong>
-    <span>{{ usuario.cant_seguidores }} seguidores</span>
+    <span class="followers-count-{{ usuario.id }}">{{ usuario.cant_seguidores }}</span> seguidores
     
-    {% if usuario.ya_sigo %}
-        <a href="{% url 'dejar_de_seguir' usuario.id %}">➖ Dejar de seguir</a>
-    {% else %}
-        <a href="{% url 'seguir' usuario.id %}">➕ Seguir</a>
-    {% endif %}
+    <button class="follow-btn {% if usuario.ya_sigo %}following{% endif %}" 
+            data-user-id="{{ usuario.id }}">
+        {% if usuario.ya_sigo %}
+            Dejar de seguir
+        {% else %}
+            Seguir
+        {% endif %}
+    </button>
 </div>
 {% empty %}
 <p>No hay otros usuarios todavía.</p>
 {% endfor %}
 
+<!-- Añadir CSRF token y JS -->
+{% csrf_token %}
+<script src="{% static 'js/follows.js' %}"></script>
 {% endblock %}
