@@ -472,3 +472,102 @@ body::after {
     left: 20px;
     top: 120px;
 }
+
+.notificacion-flotante {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+.notificacion-flotante.success {
+    background: #28a745;
+}
+
+.notificacion-flotante.error {
+    background: #dc3545;
+}
+
+.notificacion-flotante.info {
+    background: #17a2b8;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notificacion-flotante.ocultar {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.follow-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+.follow-btn {
+    font-family: "Press Start 2P", monospace;
+    font-size: 10px;
+
+    background: linear-gradient(180deg, #ff6bd6, #b34cff);
+    color: white;
+
+    border: 2px solid #ffffff;
+    border-bottom: 3px solid #5b2cff;
+
+    padding: 6px 12px;
+    cursor: pointer;
+
+    box-shadow: 2px 2px 0px #000;
+    image-rendering: pixelated;
+
+    transition: all 0.15s ease;
+}
+
+/* Hover estilo “botón presionado” */
+.follow-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 0px #000;
+}
+
+/* Click */
+.follow-btn:active {
+    transform: translateY(1px);
+    box-shadow: 1px 1px 0px #000;
+}
+
+/* Estado siguiendo */
+.follow-btn.following {
+    background: linear-gradient(180deg, #ffffff, #cfcfcf);
+    color: #000;
+
+    border: 2px solid #000;
+    border-bottom: 3px solid #444;
+}
+
+/* Hover cuando ya sigues */
+.follow-btn.following:hover {
+    background: linear-gradient(180deg, #ffb3c7, #ff6b8b);
+    color: #000;
+}
