@@ -97,7 +97,10 @@ def api_enviar_mensaje(request):
     conversacion.save()
     
     # Invalidar cache
-    #cache.delete(f'chat_{conversacion.id}')
+    try:
+        cache.delete(f'chat_{conversacion.id}')
+    except Exception:
+        pass
     
     return JsonResponse({
         'status': 'enviado',
@@ -116,11 +119,13 @@ def api_obtener_mensajes(request, conversacion_id):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     
     # Intentar cache
-   # cache_key = f'chat_{conversacion_id}_{request.user.id}'
-    #cached_data = cache.get(cache_key)
-    
-   # if cached_data is not None:
-    #    return JsonResponse(cached_data)
+    try:
+        cache_key = f'chat_{conversacion_id}_{request.user.id}'
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return JsonResponse(cached_data)
+    except Exception:
+        pass
     
     mensajes = conversacion.mensajes.select_related('emisor').order_by('fecha_envio')
     
@@ -137,7 +142,10 @@ def api_obtener_mensajes(request, conversacion_id):
         })
     
     result = {'mensajes': data}
-    #cache.set(cache_key, result, 60)  # Cache por 1 minuto
+    try:
+        cache.set(cache_key, result, 60)
+    except Exception:
+        pass
     
     return JsonResponse(result)
 

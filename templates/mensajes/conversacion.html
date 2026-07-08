@@ -97,8 +97,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const contenido = input.value.trim();
         if (!contenido) return;
 
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
+        const divTemp = document.createElement('div');
+        divTemp.className = 'mb-3 text-end';
+        divTemp.innerHTML = `
+            <div class="d-inline-block p-2 rounded bg-primary text-white"
+                 style="max-width: 70%;">
+                ${contenido}
+                <small class="d-block text-white-50 small mt-1">
+                 ${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+            </small>
+        </div>
+    `;
         fetch('/mensajes/api/enviar/', {
             method: 'POST',
             headers: {
@@ -116,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const div = document.createElement('div');
                 div.className = 'mb-3 text-end';
-                div.dataset.mensajeId = data.id || getLastMessageId() + 1;
+                div.dataset.mensajeId = data.mensaje_id || getLastMessageId() + 1;
 
                 div.innerHTML = `
                     <div class="d-inline-block p-2 rounded bg-primary text-white"
@@ -202,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error('Error cargando mensajes:', err));
     }
 
-    setInterval(cargarNuevosMensajes, 3000);
+    setInterval(cargarNuevosMensajes, 5000);
 });
 </script>
 
