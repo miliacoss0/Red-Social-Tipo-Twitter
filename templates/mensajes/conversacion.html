@@ -97,6 +97,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const contenido = input.value.trim();
         if (!contenido) return;
 
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
         const divTemp = document.createElement('div');
         divTemp.className = 'mb-3 text-end';
         divTemp.innerHTML = `

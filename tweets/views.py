@@ -12,28 +12,34 @@ from django.http import JsonResponse
 
 
 def home(request):
-    """
-    Vista principal: muestra el timeline con todos los tweets.
-    """
-    # Obtener todos los tweets (los más recientes primero)
-    tweets = Tweet.objects.all()
+    if request.user.is_authenticated:
+        # Importar el modelo Follow de la app follows
+        from follows.models import Follow
+        
+        # Obtener IDs de usuarios que sigo
+        siguiendo = Follow.objects.filter(
+            follower=request.user
+        ).values_list('followed', flat=True)
+        
+        # Mostrar tweets de usuarios que sigo + los míos
+        tweets = Tweet.objects.filter(
+            Q(author__in=siguiendo) | Q(author=request.user)
+        ).order_by('-created_at')
+    else:
+        tweets = Tweet.objects.all().order_by('-created_at')
     
-    # Formulario para crear nuevo tweet (solo si el usuario está logueado)
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
         if form.is_valid():
-            tweet = form.save(commit=False)  # No guardar aún
-            tweet.author = request.user      # Asignar el autor
-            tweet.save()                     # Guardar (activa el procesamiento de hashtags)
+            tweet = form.save(commit=False)
+            tweet.author = request.user
+            tweet.save()
             return redirect('feed_home')
     else:
         form = TweetForm()
     
-    
-    # Procesar cada tweet para resaltar menciones 
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
-
 
     context = {
         'tweets': tweets,
