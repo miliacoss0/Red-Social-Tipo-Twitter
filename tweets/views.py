@@ -13,21 +13,26 @@ from django.http import JsonResponse
 
 def home(request):
     if request.user.is_authenticated:
-        # Importar el modelo Follow de la app follows
-        from follows.models import Follow
+        from follows.models import Follow as FollowNuevo
+        from posts.models import Follow as FollowViejo
         
-        # Obtener IDs de usuarios que sigo
-        siguiendo = Follow.objects.filter(
+        # IDs de usuarios seguidos en ambos sistemas
+        siguiendo_nuevo = FollowNuevo.objects.filter(
             follower=request.user
         ).values_list('followed', flat=True)
         
-        # Mostrar tweets de usuarios que sigo + los míos
+        siguiendo_viejo = FollowViejo.objects.filter(
+            seguidor=request.user
+        ).values_list('seguido', flat=True)
+        
+        # Combinar ambas listas
+        todos_siguiendo = list(siguiendo_nuevo) + list(siguiendo_viejo)
+        
         tweets = Tweet.objects.filter(
-            Q(author__in=siguiendo) | Q(author=request.user)
+            Q(author__in=todos_siguiendo) | Q(author=request.user)
         ).order_by('-created_at')
     else:
         tweets = Tweet.objects.all().order_by('-created_at')
-    
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
         if form.is_valid():
@@ -46,8 +51,6 @@ def home(request):
         'form': form,
     }
     return render(request, 'tweets/home.html', context)
-
-
 def highlight_mentions(text):
     """
     Convierte @usuario en un enlace clickeable
