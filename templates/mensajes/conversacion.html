@@ -10,8 +10,22 @@
                     ← Volver
                 </a>
 
-                <img src="{% if otro_usuario.avatar %}{{ otro_usuario.avatar.url }}{% else %}/static/default-avatar.png{% endif %}"
-                     alt="Avatar" class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+                <!-- Avatar con GitHub o fallback -->
+                {% with social=otro_usuario.socialaccount_set.first %}
+                    {% if social and social.provider == 'github' %}
+                        <img src="{{ social.extra_data.avatar_url }}" 
+                             alt="Avatar de {{ otro_usuario.username }}" 
+                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+                    {% elif social %}
+                        <img src="{{ social.get_avatar_url }}" 
+                             alt="Avatar de {{ otro_usuario.username }}" 
+                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ otro_usuario.username|urlencode }}&background=007bff&color=fff&size=30" 
+                             alt="Avatar de {{ otro_usuario.username }}" 
+                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+                    {% endif %}
+                {% endwith %}
 
                 <span class="ms-2 fw-bold">{{ otro_usuario.username }}</span>
 
@@ -54,6 +68,10 @@
                             {% endif %}
                         </small>
                     </div>
+                </div>
+            {% empty %}
+                <div class="text-center text-muted py-5">
+                    <p>No hay mensajes. ¡Envía el primero!</p>
                 </div>
             {% endfor %}
 
@@ -99,17 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        const divTemp = document.createElement('div');
-        divTemp.className = 'mb-3 text-end';
-        divTemp.innerHTML = `
-            <div class="d-inline-block p-2 rounded bg-primary text-white"
-                 style="max-width: 70%;">
-                ${contenido}
-                <small class="d-block text-white-50 small mt-1">
-                 ${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-            </small>
-        </div>
-    `;
         fetch('/mensajes/api/enviar/', {
             method: 'POST',
             headers: {
@@ -123,18 +130,18 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.status === 'enviado') {
-
+            if (data.success) {
+                const mensaje = data.mensaje;
                 const div = document.createElement('div');
                 div.className = 'mb-3 text-end';
-                div.dataset.mensajeId = data.mensaje_id || getLastMessageId() + 1;
+                div.dataset.mensajeId = mensaje.id;
 
                 div.innerHTML = `
                     <div class="d-inline-block p-2 rounded bg-primary text-white"
                          style="max-width: 70%;">
-                        ${data.contenido}
+                        ${mensaje.contenido}
                         <small class="d-block text-white-50 small mt-1">
-                            ${new Date(data.fecha).toLocaleTimeString([], {
+                            ${new Date(mensaje.fecha).toLocaleTimeString([], {
                                 hour: '2-digit',
                                 minute: '2-digit'
                             })}
@@ -147,6 +154,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 input.value = '';
                 input.focus();
+            } else {
+                alert(data.error || 'Error al enviar mensaje');
             }
         })
         .catch(err => console.error('Error:', err));
@@ -156,17 +165,13 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`/mensajes/api/mensajes/${conversacionId}/`)
             .then(r => r.json())
             .then(data => {
-
-                if (!data.mensajes) return;
+                if (!data.success || !data.mensajes) return;
 
                 const ultimoId = getLastMessageId();
-
                 let hayNuevos = false;
 
                 data.mensajes.forEach(msg => {
-
                     if (msg.id > ultimoId && !msg.es_mio) {
-
                         hayNuevos = true;
 
                         const div = document.createElement('div');
@@ -176,13 +181,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         div.innerHTML = `
                             <div class="d-inline-block p-2 rounded bg-white shadow-sm"
                                  style="max-width: 70%;">
-
                                 <small class="d-block text-muted small">
                                     ${msg.emisor}
                                 </small>
-
                                 ${msg.contenido}
-
                                 <small class="d-block text-muted small mt-1">
                                     ${new Date(msg.fecha).toLocaleTimeString([], {
                                         hour: '2-digit',
@@ -190,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                     })}
                                     ${msg.leido ? '<span class="text-success">✓✓</span>' : ''}
                                 </small>
-
                             </div>
                         `;
 
