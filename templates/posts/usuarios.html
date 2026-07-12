@@ -5,17 +5,6 @@
 <div class="usuarios-container">
     <h2>Usuarios</h2>
     
-<<<<<<< HEAD
-    <button class="follow-btn {% if usuario.ya_sigo %}following{% endif %}" 
-            data-user-id="{{ usuario.id }}">
-        {% if usuario.ya_sigo %}
-            Dejar de seguir
-        {% else %}
-            Seguir
-        {% endif %}
-    </button>
-    <a href="{% url 'mensajes:conversacion' usuario.id %}" class="btn">💬 Mensaje</a>
-=======
     <input type="text" id="buscador-usuarios" 
            placeholder="Buscar usuarios..." 
            oninput="buscarUsuarios(this.value)"
@@ -30,7 +19,6 @@
     <div id="lista-usuarios">
         <div class="loading">Cargando usuarios...</div>
     </div>
->>>>>>> Milagros-A
 </div>
 
 <script>
