@@ -41,7 +41,7 @@
                 <strong>{{ post.autor.username }}</strong>
                 <span>{{ post.fecha }}</span>
                 {% if post.editado %}<span>✏️ editado</span>{% endif %}
-                <p>{{ post.contenido }}</p>
+                <p>{{ post.contenido_resaltado|safe }}</p>
                 {% if post.archivo %}
                     {% if post.archivo.name|slice:"-4:" == ".mp4" %}
                         <video controls style="max-width: 100%; display: block; margin: auto;">
@@ -101,7 +101,7 @@ fetch('/posts/api/feed/', {
                 <strong>${post.autor}</strong>
                 <span>${post.fecha}</span>
                 ${post.editado ? '<span>✏️ editado</span>' : ''}
-                <p>${post.contenido}</p>
+                <p>${post.contenido_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe}</p>
             `;
             container.appendChild(div);
         });
