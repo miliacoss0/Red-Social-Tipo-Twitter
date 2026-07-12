@@ -97,7 +97,10 @@ def api_enviar_mensaje(request):
     conversacion.save()
     
     # Invalidar cache
-    cache.delete(f'chat_{conversacion.id}')
+    try:
+        cache.delete(f'chat_{conversacion.id}')
+    except Exception:
+        pass
     
     return JsonResponse({
         'status': 'enviado',

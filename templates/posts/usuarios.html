@@ -56,18 +56,24 @@ function buscarUsuarios(query) {
                         <strong>@${user.username}</strong>
                         <span style="color: #666; margin-left: 12px;">${user.cant_seguidores} seguidores</span>
                     </div>
-                    <button onclick="toggleSeguir(${user.id}, this)" 
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="toggleSeguir(${user.id}, this)"
                             class="${user.ya_sigo ? 'btn-siguiendo' : 'btn-seguir'}"
                             style="
-                                padding: 8px 16px;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-weight: bold;
-                                ${user.ya_sigo ? 'background: #dc3545; color: white;' : 'background: #4A90D9; color: white;'}
+                                    padding: 8px 16px;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-weight: bold;
+                                    ${user.ya_sigo ? 'background: #dc3545; color: white;' : 'background: #4A90D9; color: white;'}
                             ">
                         ${user.ya_sigo ? 'Dejar de seguir' : 'Seguir'}
-                    </button>
+                        </button>
+                        <a href="/mensajes/conversacion/${user.id}/" 
+                           style="padding: 8px 16px; background: #6f42c1; color: white; border-radius: 4px; text-decoration: none; display: flex; align-items: center;">
+                            💬
+                        </a>
+                    </div>
                 </div>
             `).join('');
         })
