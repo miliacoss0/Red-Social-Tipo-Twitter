@@ -517,3 +517,96 @@ def todas_menciones(request):
     return render(request, 'posts/menciones.html', {
         'menciones': todas
     })
+
+@login_required
+def api_borrar_post(request, post_id):
+    if request.method == 'DELETE':
+        post = get_object_or_404(Post, id=post_id, autor=request.user)
+        post.delete()
+        return JsonResponse({'ok': True})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario_a_seguir = get_object_or_404(User, id=user_id)
+        Follow.objects.get_or_create(seguidor=request.user, seguido=usuario_a_seguir)
+        return JsonResponse({'ok': True, 'siguiendo': True})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_dejar_de_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario = get_object_or_404(User, id=user_id)
+        Follow.objects.filter(seguidor=request.user, seguido=usuario).delete()
+        return JsonResponse({'ok': True, 'siguiendo': False})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_editar_post(request, post_id):
+    if request.method == 'PUT' or request.method == 'POST':
+        import json
+        post = get_object_or_404(Post, id=post_id, autor=request.user)
+        
+        if not post.puede_editar():
+            return JsonResponse({'ok': False, 'error': 'No se puede editar'}, status=403)
+        
+        try:
+            body = json.loads(request.body)
+            contenido = body.get('contenido', '')
+            
+            if contenido:
+                post.contenido = contenido
+                post.editado = True
+                post.fecha_edicion = timezone.now()
+                post.save()
+                return JsonResponse({
+                    'ok': True,
+                    'post': {
+                        'id': post.id,
+                        'contenido': post.contenido,
+                        'editado': post.editado,
+                        'fecha_edicion': post.fecha_edicion.strftime('%d/%m/%Y %H:%M')
+                    }
+                })
+            return JsonResponse({'ok': False, 'error': 'Contenido vacío'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'ok': False, 'error': 'JSON inválido'}, status=400)
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_usuarios(request):
+    if request.method == 'GET':
+        q = request.GET.get('q', '')
+        usuarios = User.objects.exclude(id=request.user.id)
+        if q:
+            usuarios = usuarios.filter(username__icontains=q)
+        
+        siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        
+        data = []
+        for usuario in usuarios[:20]:
+            data.append({
+                'id': usuario.id,
+                'username': usuario.username,
+                'ya_sigo': usuario.id in siguiendo,
+                'cant_seguidores': Follow.objects.filter(seguido=usuario).count(),
+            })
+        return JsonResponse({'usuarios': data})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_menciones(request):
+    if request.method == 'GET':
+        username = request.user.username
+        posts = Post.objects.filter(contenido__icontains=f'@{username}').order_by('-fecha')
+        data = []
+        for post in posts[:20]:
+            data.append({
+                'id': post.id,
+                'autor': post.autor.username,
+                'contenido': post.contenido,
+                'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+            })
+        return JsonResponse({'menciones': data})
+    return JsonResponse({'ok': False}, status=405)
