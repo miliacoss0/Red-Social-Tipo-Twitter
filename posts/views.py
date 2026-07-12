@@ -169,7 +169,7 @@ def api_borrar_post(request, post_id):
 @login_required
 def api_seguir(request, user_id):
     if request.method == 'POST':
-        usuario_a_seguir = get_object_or_404(User, user_id)
+        usuario_a_seguir = get_object_or_404(User, id=user_id)
         Follow.objects.get_or_create(seguidor=request.user, seguido=usuario_a_seguir)
         return JsonResponse({'ok': True, 'siguiendo': True})
     return JsonResponse({'ok': False}, status=405)
