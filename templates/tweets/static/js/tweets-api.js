@@ -50,15 +50,25 @@ function apiRequest(url, method = 'GET', data = null) {
         });
 }
 
+function highlightMentions(text) {
+    /**
+     * Convierte @usuario en un enlace clickeable a su perfil.
+     */
+    if (!text) return text;
+    
+    // Buscar patrones @usuario (acepta letras, números, guiones y guión bajo)
+    return text.replace(/@([\w\-]+)/g, function(match, username) {
+        return `<a href="/tweets/perfil/${username}/" class="mention-link">@${username}</a>`;
+    });
+}
+
 // Funcion para cargar todos los tweets
 function cargarTweets(containerId = 'tweets-container') {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // Mostrar indicador de carga
     container.innerHTML = '<div style="text-align: center; padding: 20px;">Cargando tweets...</div>';
     
-    // Hacer peticion GET a la API
     apiRequest('/tweets/api/tweets/')
         .then(data => {
             container.innerHTML = '';
@@ -68,13 +78,14 @@ function cargarTweets(containerId = 'tweets-container') {
                 return;
             }
             
-            // Renderizar cada tweet
             data.tweets.forEach(tweet => {
                 const div = document.createElement('div');
                 div.className = 'tweet-card';
                 div.style.cssText = 'border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;';
                 
-                // Generar HTML de hashtags si existen
+                // RESALTAR MENCIONES EN EL CONTENIDO
+                const contenidoConMenciones = highlightMentions(tweet.content);
+                
                 let hashtagsHtml = '';
                 if (tweet.hashtags && tweet.hashtags.length > 0) {
                     hashtagsHtml = '<div style="margin-top: 10px;">';
@@ -86,11 +97,13 @@ function cargarTweets(containerId = 'tweets-container') {
                 
                 div.innerHTML = `
                     <div style="margin-bottom: 10px; color: #0366d6;">
-                        <strong>${tweet.author}</strong>
+                        <a href="/tweets/perfil/${tweet.author}/" style="color: #0366d6; text-decoration: none; font-weight: bold;">
+                            ${tweet.author}
+                        </a>
                         <small style="color: #586069;">${tweet.created_at}</small>
                     </div>
                     <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
-                        ${tweet.content}
+                        ${contenidoConMenciones}
                     </div>
                     ${hashtagsHtml}
                 `;
@@ -103,9 +116,9 @@ function cargarTweets(containerId = 'tweets-container') {
         });
 }
 
+
 // Funcion para crear un tweet via API
 function crearTweet(content, containerId = 'tweets-container') {
-    // Validar contenido
     if (!content || content.trim() === '') {
         alert('El contenido no puede estar vacio');
         return;
@@ -116,17 +129,22 @@ function crearTweet(content, containerId = 'tweets-container') {
         return;
     }
     
-    // Hacer peticion POST a la API
     apiRequest('/tweets/api/tweets/', 'POST', { content: content.trim() })
         .then(data => {
             if (data.ok) {
                 console.log('Tweet creado:', data.id);
-                // Recargar tweets sin recargar la pagina
+                // Recargar tweets con fetch
                 cargarTweets(containerId);
                 // Limpiar textarea
                 const textarea = document.getElementById('tweet-content');
                 if (textarea) {
                     textarea.value = '';
+                }
+                // Actualizar contador
+                const contador = document.getElementById('caracteres-contador');
+                if (contador) {
+                    contador.textContent = '280 caracteres disponibles';
+                    contador.style.color = '#586069';
                 }
             }
         })
@@ -157,6 +175,9 @@ function cargarTweetsUsuario(username, containerId = 'tweets-usuario-container')
                 div.className = 'tweet-card';
                 div.style.cssText = 'border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;';
                 
+                // RESALTAR MENCIONES EN EL CONTENIDO
+                const contenidoConMenciones = highlightMentions(tweet.content);
+                
                 let hashtagsHtml = '';
                 if (tweet.hashtags && tweet.hashtags.length > 0) {
                     hashtagsHtml = '<div style="margin-top: 10px;">';
@@ -168,11 +189,13 @@ function cargarTweetsUsuario(username, containerId = 'tweets-usuario-container')
                 
                 div.innerHTML = `
                     <div style="margin-bottom: 10px; color: #0366d6;">
-                        <strong>${tweet.author}</strong>
+                        <a href="/tweets/perfil/${tweet.author}/" style="color: #0366d6; text-decoration: none; font-weight: bold;">
+                            ${tweet.author}
+                        </a>
                         <small style="color: #586069;">${tweet.created_at}</small>
                     </div>
                     <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
-                        ${tweet.content}
+                        ${contenidoConMenciones}
                     </div>
                     ${hashtagsHtml}
                 `;
@@ -245,24 +268,55 @@ function cargarMenciones(containerId = 'menciones-container') {
                 div.className = 'mencion-card';
                 div.style.cssText = 'border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;';
                 
+                // RESALTAR MENCIONES EN EL CONTENIDO DEL TWEET
+                const contenidoConMenciones = highlightMentions(mencion.tweet_content);
+                
                 div.innerHTML = `
                     <div style="margin-bottom: 10px;">
-                        <strong style="color: #0366d6;">@${mencion.mentioned_by}</strong>
-                        <small style="color: #586069;">te menciono en un tweet</small>
+                        <strong style="color: #0366d6;">
+                            <a href="/tweets/perfil/${mencion.mentioned_by}/" style="color: #0366d6; text-decoration: none;">
+                                @${mencion.mentioned_by}
+                            </a>
+                        </strong>
+                        <small style="color: #586069;">te mencionó en un tweet</small>
                         <small style="color: #586069; display: block; font-size: 12px;">
                             ${mencion.created_at}
                         </small>
                     </div>
                     <div style="margin-bottom: 10px; padding: 10px; background: #f6f8fa; border-radius: 8px;">
-                        ${mencion.tweet_content}
+                        ${contenidoConMenciones}
                     </div>
                     <div>
                         <a href="/tweets/tweet/${mencion.tweet_id}/" style="color: #0366d6; text-decoration: none;">
                             Ver tweet →
                         </a>
+                        ${!mencion.is_read ? `
+                            <button class="marcar-leido-btn" data-id="${mencion.id}" style="background: #0366d6; color: white; border: none; padding: 5px 15px; border-radius: 15px; cursor: pointer; margin-left: 10px; font-size: 12px;">
+                                Marcar como leído
+                            </button>
+                        ` : `
+                            <span style="background: #17BF63; color: white; padding: 3px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;">✓ Leído</span>
+                        `}
                     </div>
                 `;
                 container.appendChild(div);
+            });
+            
+            // Agregar event listeners para marcar como leído
+            document.querySelectorAll('.marcar-leido-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const id = this.dataset.id;
+                    const card = this.closest('.mencion-card');
+                    
+                    try {
+                        const response = await apiRequest(`/tweets/api/marcar-leida/${id}/`, 'POST');
+                        if (response.success) {
+                            this.replaceWith('<span style="background: #17BF63; color: white; padding: 3px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;">✓ Leído</span>');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                });
             });
         })
         .catch(error => {
@@ -364,6 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
 //Exponer funciones globalmente para uso en otros scripts
 window.cargarTweets = cargarTweets;
 window.crearTweet = crearTweet;
@@ -372,3 +428,4 @@ window.cargarTweetsHashtag = cargarTweetsHashtag;
 window.cargarMenciones = cargarMenciones;
 window.buscarTweets = buscarTweets;
 window.apiRequest = apiRequest;
+window.highlightMentions = highlightMentions; 
