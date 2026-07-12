@@ -228,7 +228,7 @@ if env('CLOUDINARY_CLOUD_NAME'):
 
 LANGUAGE_CODE = 'es-es'
 
-TIME_ZONE = 'America/Santiago'
+TIME_ZONE = 'America/Asuncion'
 
 USE_I18N = True
 

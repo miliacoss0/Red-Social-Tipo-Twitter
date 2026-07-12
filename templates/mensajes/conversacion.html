@@ -2,92 +2,43 @@
 {% block title %}Chat con {{ otro_usuario.username }}{% endblock %}
 
 {% block contenido %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex align-items-center">
-                <a href="{% url 'mensajes:inbox' %}" class="text-white me-3 text-decoration-none">
-                    ← Volver
-                </a>
+<div style="display: flex; flex-direction: column; height: 100%;">
+    <div style="padding: 10px; border-bottom: 2px solid var(--blue-dark);">
+        <a href="{% url 'mensajes:inbox' %}" style="color: var(--cyan-accent);">← Volver</a>
+        <strong style="margin-left: 10px;">{{ otro_usuario.username }}</strong>
+    </div>
 
-                <!-- Avatar con GitHub o fallback -->
-                {% with social=otro_usuario.socialaccount_set.first %}
-                    {% if social and social.provider == 'github' %}
-                        <img src="{{ social.extra_data.avatar_url }}" 
-                             alt="Avatar de {{ otro_usuario.username }}" 
-                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
-                    {% elif social %}
-                        <img src="{{ social.get_avatar_url }}" 
-                             alt="Avatar de {{ otro_usuario.username }}" 
-                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
-                    {% else %}
-                        <img src="https://ui-avatars.com/api/?name={{ otro_usuario.username|urlencode }}&background=007bff&color=fff&size=30" 
-                             alt="Avatar de {{ otro_usuario.username }}" 
-                             class="rounded-circle" width="30" height="30" style="object-fit: cover;">
-                    {% endif %}
-                {% endwith %}
-
-                <span class="ms-2 fw-bold">{{ otro_usuario.username }}</span>
-
-                <span class="ms-2 text-white-50 small">
-                    {% if otro_usuario.is_online %}
-                        <span class="badge bg-success">En línea</span>
-                    {% endif %}
-                </span>
+    <div id="chat-box" style="flex: 1; overflow-y: auto; padding: 10px; min-height: 300px; max-height: 400px;">
+        {% for mensaje in mensajes %}
+            <div class="mb-3 {% if mensaje.emisor == request.user %}text-end{% endif %}"
+                 data-mensaje-id="{{ mensaje.id }}"
+                 style="margin-bottom: 10px; text-align: {% if mensaje.emisor == request.user %}right{% else %}left{% endif %};">
+                <div style="
+                    display: inline-block;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    max-width: 70%;
+                    background: {% if mensaje.emisor == request.user %}var(--pink-hot){% else %}var(--window-bg){% endif %};
+                    color: {% if mensaje.emisor == request.user %}white{% else %}var(--text-dark){% endif %};
+                ">
+                    <small style="display: block; font-size: 11px; opacity: 0.8;">{{ mensaje.emisor.username }}</small>
+                    {{ mensaje.contenido }}
+                    <small style="display: block; font-size: 11px; opacity: 0.8; margin-top: 4px;">
+                        {{ mensaje.fecha_envio|date:"H:i" }}
+                        {% if mensaje.leido and mensaje.emisor != request.user %}✓✓{% endif %}
+                    </small>
+                </div>
             </div>
-        </div>
+        {% endfor %}
+    </div>
 
-        <div class="card-body chat-box" id="chat-box"
-             style="height: 400px; overflow-y: auto; background: #f8f9fa;">
-
-            {% for mensaje in mensajes %}
-                <div class="mb-3 {% if mensaje.emisor == request.user %}text-end{% endif %}"
-                     data-mensaje-id="{{ mensaje.id }}">
-
-                    <div class="d-inline-block p-2 rounded
-                        {% if mensaje.emisor == request.user %}
-                            bg-primary text-white
-                        {% else %}
-                            bg-white shadow-sm
-                        {% endif %}"
-                        style="max-width: 70%;">
-
-                        <small class="d-block text-muted small">
-                            {{ mensaje.emisor.username }}
-                        </small>
-
-                        {{ mensaje.contenido|linebreaks }}
-
-                        <small class="d-block text-muted small mt-1">
-                            {{ mensaje.fecha_envio|date:"H:i" }}
-
-                            {% if mensaje.leido and mensaje.emisor != request.user %}
-                                <span class="text-success">✓✓</span>
-                            {% elif mensaje.emisor == request.user %}
-                                <span class="text-secondary">✓</span>
-                            {% endif %}
-                        </small>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="text-center text-muted py-5">
-                    <p>No hay mensajes. ¡Envía el primero!</p>
-                </div>
-            {% endfor %}
-
-        </div>
-
-        <div class="card-footer bg-white">
-            <form id="chat-form" class="d-flex">
-                {% csrf_token %}
-                <input type="text" id="mensaje-input" class="form-control me-2"
-                       placeholder="Escribe un mensaje..." required autocomplete="off">
-
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Enviar
-                </button>
-            </form>
-        </div>
+    <div style="padding: 10px; border-top: 2px solid var(--blue-dark);">
+        <form id="chat-form" style="display: flex; flex-direction: column; gap: 8px;">
+            {% csrf_token %}
+            <input type="text" id="mensaje-input" placeholder="Escribe un mensaje..." 
+                required autocomplete="off" style="width: 100%; box-sizing: border-box;">
+            <button type="submit" class="btn" style="width: 100%; box-sizing: border-box;">Enviar</button>
+        </form>
     </div>
 </div>
 

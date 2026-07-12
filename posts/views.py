@@ -92,31 +92,27 @@ def borrar_post(request, post_id):
 
 @login_required
 def lista_usuarios(request):
-    q = request.GET.get('q', '')
-    usuarios = User.objects.exclude(id=request.user.id)
-    if q:
-        usuarios = usuarios.filter(username__icontains=q)
-    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
-    for usuario in usuarios:
-        usuario.ya_sigo = usuario.id in siguiendo
-        usuario.cant_seguidores = Follow.objects.filter(seguido=usuario).count()
-    return render(request, 'posts/usuarios.html', {'usuarios': usuarios, 'q': q})
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
+    return render(request, 'posts/usuarios.html') 
 
 @login_required
 def hashtags(request):
-    temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 'series', 'lectura', 'estudio', 'trabajo']
-    return render(request, 'posts/hashtags.html', {'temas': temas})
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
+    return render(request, 'posts/hashtags.html')
 
 @login_required
 def hashtag_detalle(request, tema):
-    posts = Post.objects.filter(contenido__icontains=f'#{tema}').order_by('-fecha')
-    return render(request, 'posts/hashtag_detalle.html', {'tema': tema, 'posts': posts})
+    """Esta vista ya no se usa, la reemplaza la API"""
+    return redirect('hashtags')  
 
 @login_required
 def menciones(request):
+    """Vista tradicional - ahora solo renderiza el HTML vacío"""
     return render(request, 'posts/menciones.html')
 
-@api_required  # Decorador para forzar JSON
+#funciones para que la pagina no recargue
+
+#@api_required  # Decorador para forzar JSON
 @login_required
 def api_feed(request):
     #Verificar si la peticion espera JSON
@@ -135,9 +131,13 @@ def api_feed(request):
             data.append({
                 'id': post.id,
                 'autor': post.autor.username or post.autor.email or 'desconocido',
+                'es_mio': post.autor == request.user,
+                'puede_editar': post.puede_editar(),
                 'contenido': post.contenido,
                 'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
                 'editado': post.editado,
+                'archivo_url': post.archivo.url if post.archivo else None,
+                'archivo_nombre': post.archivo.name if post.archivo else None,
             })
         return JsonResponse({'posts': data})
 
@@ -165,9 +165,133 @@ def api_session_info(request):
         'usuario': request.user.username or request.user.email,
         'session_key': request.session.session_key,
         'esta_autenticado': request.user.is_authenticated,
-        'metodo_http': request.method,
-        'cookies': list(request.COOKIES.keys()),
+        'metodo_http': request.method,  # GET, POST, etc.
+        'cookies': list(request.COOKIES.keys()),  # cookies disponibles
     })
+    
+@login_required
+def api_borrar_post(request, post_id):
+    if request.method == 'DELETE':
+        post = get_object_or_404(Post, id=post_id, autor=request.user)
+        post.delete()
+        return JsonResponse({'ok': True})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario_a_seguir = get_object_or_404(User, id=user_id)
+        Follow.objects.get_or_create(seguidor=request.user, seguido=usuario_a_seguir)
+        return JsonResponse({'ok': True, 'siguiendo': True})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_dejar_de_seguir(request, user_id):
+    if request.method == 'POST':
+        usuario = get_object_or_404(User, id=user_id)
+        Follow.objects.filter(seguidor=request.user, seguido=usuario).delete()
+        return JsonResponse({'ok': True, 'siguiendo': False})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_editar_post(request, post_id):
+    if request.method == 'PUT' or request.method == 'POST':
+        import json
+        post = get_object_or_404(Post, id=post_id, autor=request.user)
+        
+        if not post.puede_editar():
+            return JsonResponse({'ok': False, 'error': 'No se puede editar'}, status=403)
+        
+        body = json.loads(request.body)
+        contenido = body.get('contenido', '')
+        
+        if contenido:
+            post.contenido = contenido
+            post.editado = True
+            post.fecha_edicion = timezone.now()
+            post.save()
+            return JsonResponse({
+                'ok': True,
+                'post': {
+                    'id': post.id,
+                    'contenido': post.contenido,
+                    'editado': post.editado,
+                    'fecha_edicion': post.fecha_edicion.strftime('%d/%m/%Y %H:%M')
+                }
+            })
+        return JsonResponse({'ok': False, 'error': 'Contenido vacío'}, status=400)
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_usuarios(request):
+    if request.method == 'GET':
+        q = request.GET.get('q', '')
+        usuarios = User.objects.exclude(id=request.user.id)
+        if q:
+            usuarios = usuarios.filter(username__icontains=q)
+        
+        siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        
+        data = []
+        for usuario in usuarios[:20]:
+            data.append({
+                'id': usuario.id,
+                'username': usuario.username,
+                'ya_sigo': usuario.id in siguiendo,
+                'cant_seguidores': Follow.objects.filter(seguido=usuario).count(),
+            })
+        return JsonResponse({'usuarios': data})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_hashtags(request):
+    if request.method == 'GET':
+        temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 
+                 'series', 'lectura', 'estudio', 'trabajo']
+        data = []
+        for tema in temas:
+            count = Post.objects.filter(contenido__icontains=f'#{tema}').count()
+            data.append({
+                'tema': tema,
+                'cantidad': count
+            })
+        return JsonResponse({'hashtags': data})
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_hashtag_detalle(request, tema):
+    if request.method == 'GET':
+        posts = Post.objects.filter(contenido__icontains=f'#{tema}').order_by('-fecha')
+        data = []
+        for post in posts[:20]:
+            data.append({
+                'id': post.id,
+                'autor': post.autor.username,
+                'contenido': post.contenido,
+                'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+                'es_mio': post.autor == request.user,
+            })
+        return JsonResponse({
+            'tema': tema,
+            'posts': data
+        })
+    return JsonResponse({'ok': False}, status=405)
+
+@login_required
+def api_menciones(request):
+    if request.method == 'GET':
+        username = request.user.username
+        posts = Post.objects.filter(contenido__icontains=f'@{username}').order_by('-fecha')
+        data = []
+        for post in posts[:20]:
+            data.append({
+                'id': post.id,
+                'autor': post.autor.username,
+                'contenido': post.contenido,
+                'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
+            })
+        return JsonResponse({'menciones': data})
+    return JsonResponse({'ok': False}, status=405)
 
 #Endpoint para verificar posts nuevos (polling)
 @login_required
