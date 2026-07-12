@@ -16,7 +16,6 @@ def home(request):
         from follows.models import Follow as FollowNuevo
         from posts.models import Follow as FollowViejo
         
-        # IDs de usuarios seguidos en ambos sistemas
         siguiendo_nuevo = FollowNuevo.objects.filter(
             follower=request.user
         ).values_list('followed', flat=True)
@@ -25,7 +24,6 @@ def home(request):
             seguidor=request.user
         ).values_list('seguido', flat=True)
         
-        # Combinar ambas listas
         todos_siguiendo = list(siguiendo_nuevo) + list(siguiendo_viejo)
         
         tweets = Tweet.objects.filter(
@@ -33,6 +31,7 @@ def home(request):
         ).order_by('-created_at')
     else:
         tweets = Tweet.objects.all().order_by('-created_at')
+    
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
         if form.is_valid():
@@ -43,6 +42,7 @@ def home(request):
     else:
         form = TweetForm()
     
+    # PROCESAR MENCIONES PARA CADA TWEET
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
 
@@ -55,13 +55,12 @@ def highlight_mentions(text):
     """
     Convierte @usuario en un enlace clickeable
     """
-    import re
     # Buscar patrones @usuario y convertirlos en enlaces
     def replace_mention(match):
         username = match.group(1)
-        return f'<a href="/perfil/{username}/" class="mention-link">@{username}</a>'
+        return f'<a href="/tweets/perfil/{username}/" class="mention-link">@{username}</a>'
     
-    highlighted = re.sub(r'@(\w+)', replace_mention, text)
+    highlighted = re.sub(r'@([\w\-]+)', replace_mention, text)
     return highlighted
 
 
@@ -267,35 +266,27 @@ def api_tweets_hashtag(request, tag_name):
     }, status=200)
 
 
-def api_mis_menciones(request):
-    # Verificar que el usuario este autenticado
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'Usuario no autenticado'}, status=401)
-    
-    # Obtener menciones del usuario
+@login_required
+def mis_menciones(request):
+    """
+    Muestra todos los tweets donde han mencionado al usuario logueado.
+    """
+    # Obtener todas las menciones del usuario actual
     menciones = Mention.objects.filter(
         mentioned_user=request.user
     ).select_related('tweet', 'mentioned_by').order_by('-created_at')
     
-    data = []
-    for mencion in menciones:
-        data.append({
-            'id': mencion.id,
-            'tweet_id': mencion.tweet.id,
-            'tweet_content': mencion.tweet.content,
-            'mentioned_by': mencion.mentioned_by.username,
-            'created_at': mencion.created_at.strftime('%d/%m/%Y %H:%M'),
-            'is_read': mencion.is_read
-        })
+    # Contar las no leídas
+    total_no_leidas = menciones.filter(is_read=False).count()
     
-    # Marcar todas las menciones como leidas
+    # Marcar como leídas
     menciones.update(is_read=True)
     
-    # Devolver respuesta JSON con las menciones
-    return JsonResponse({
-        'menciones': data,
-        'total': len(data)
-    }, status=200)
+    context = {
+        'menciones': menciones,
+        'total_no_leidas': total_no_leidas,
+    }
+    return render(request, 'tweets/menciones.html', context)
 
 
 def api_buscar_tweets(request):
@@ -343,4 +334,44 @@ def api_session_info(request):
         'esta_autenticado': request.user.is_authenticated,
         'session_key': request.session.session_key,
         'cookies': list(request.COOKIES.keys())
+    }, status=200)
+
+@login_required
+def api_marcar_mencion_leida(request, mencion_id):
+    """
+    Marcar una mención como leída (API)
+    """
+    mencion = get_object_or_404(Mention, id=mencion_id, mentioned_user=request.user)
+    mencion.is_read = True
+    mencion.save()
+    
+    return JsonResponse({
+        'success': True,
+        'mensaje': 'Mención marcada como leída'
+    })
+
+@login_required
+def api_mis_menciones(request):
+    """
+    API para obtener menciones del usuario autenticado en formato JSON
+    """
+    # Obtener menciones del usuario
+    menciones = Mention.objects.filter(
+        mentioned_user=request.user
+    ).select_related('tweet', 'mentioned_by').order_by('-created_at')
+    
+    data = []
+    for mencion in menciones:
+        data.append({
+            'id': mencion.id,
+            'tweet_id': mencion.tweet.id,
+            'tweet_content': mencion.tweet.content,
+            'mentioned_by': mencion.mentioned_by.username,
+            'created_at': mencion.created_at.strftime('%d/%m/%Y %H:%M'),
+            'is_read': mencion.is_read
+        })
+    
+    return JsonResponse({
+        'menciones': data,
+        'total': len(data)
     }, status=200)
