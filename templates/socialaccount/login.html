@@ -1,0 +1,117 @@
+{% extends "socialaccount/base_entrance.html" %}
+{% load i18n allauth static %}
+
+{% block head_title %}
+    {% trans "Sign In" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="boot-screen">
+
+    <div class="boot-container">
+
+        <!-- Logo -->
+        <div class="boot-logo">
+            <span class="boot-logo-pixel">S</span><span class="boot-logo-pixel">O</span><span class="boot-logo-pixel">C</span><span class="boot-logo-pixel">I</span><span class="boot-logo-pixel">A</span><span class="boot-logo-dot">L</span><span class="boot-logo-pixel">.</span><span class="boot-logo-pixel">R</span><span class="boot-logo-pixel">E</span><span class="boot-logo-pixel">D</span>
+        </div>
+
+        <!-- Gato pixel -->
+        <svg class="boot-cat"
+             width="80"
+             height="80"
+             viewBox="0 0 80 80"
+             xmlns="http://www.w3.org/2000/svg">
+
+            <rect x="14" y="12" width="10" height="10" fill="#e8d5f5"/>
+            <rect x="56" y="12" width="10" height="10" fill="#e8d5f5"/>
+
+            <rect x="16" y="14" width="6" height="6" fill="#f080c0"/>
+            <rect x="58" y="14" width="6" height="6" fill="#f080c0"/>
+
+            <rect x="14" y="22" width="52" height="38" fill="#e8d5f5"/>
+
+            <rect x="10" y="26" width="4" height="30" fill="#b090d8"/>
+            <rect x="66" y="26" width="4" height="30" fill="#b090d8"/>
+
+            <rect x="14" y="60" width="52" height="4" fill="#b090d8"/>
+
+            <rect x="22" y="32" width="10" height="10" fill="#40e8f0"/>
+            <rect x="48" y="32" width="10" height="10" fill="#40e8f0"/>
+
+            <rect x="26" y="36" width="4" height="4" fill="#1a0a2e"/>
+            <rect x="52" y="36" width="4" height="4" fill="#1a0a2e"/>
+
+            <rect x="23" y="33" width="2" height="2" fill="#ffffff"/>
+            <rect x="49" y="33" width="2" height="2" fill="#ffffff"/>
+
+            <rect x="36" y="46" width="8" height="4" fill="#f080c0"/>
+
+            <rect x="14" y="48" width="18" height="2" fill="#9060c0"/>
+            <rect x="48" y="48" width="18" height="2" fill="#9060c0"/>
+
+            <rect x="30" y="52" width="20" height="2" fill="#b090d8"/>
+        </svg>
+
+        <p class="boot-status">
+            {% if process == "connect" %}
+                Conectando con {{ provider }}...
+            {% else %}
+                Iniciando sesión con {{ provider }}...
+            {% endif %}
+        </p>
+
+        <div class="boot-bar-wrapper">
+            <div class="boot-bar-track">
+                <div class="boot-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="boot-dots">
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+        </div>
+
+        {% element form method="post" no_visible_fields=True %}
+            {% slot actions %}
+                {% csrf_token %}
+                <button type="submit" id="submitBtn" style="display:none;">
+                    Continue
+                </button>
+            {% endslot %}
+        {% endelement %}
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const form = document.querySelector("form");
+
+    if(form){
+        setTimeout(function(){
+            form.submit();
+        },1500);
+    }
+
+});
+</script>
+
+{% endblock content %}
+
+{% block extra_head %}
+{{ block.super }}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'login.css' %}">
+
+{% endblock extra_head %}

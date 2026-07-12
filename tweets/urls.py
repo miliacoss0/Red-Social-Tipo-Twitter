@@ -19,4 +19,12 @@ urlpatterns = [
 
     # Perfil de usuario
     path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'), 
+
+    # API endpoints
+    path('api/tweets/', views.api_tweets, name='api_tweets'),
+    path('api/tweets/usuario/<str:username>/', views.api_tweets_usuario, name='api_tweets_usuario'), 
+    path('api/tweets/hashtag/<str:tag_name>/', views.api_tweets_hashtag, name='api_tweets_hashtag'),  
+    path('api/menciones/', views.api_mis_menciones, name='api_mis_menciones'),  
+    path('api/buscar/', views.api_buscar_tweets, name='api_buscar_tweets'),  
+    path('api/session/', views.api_session_info, name='api_session_tweets'),  
 ]

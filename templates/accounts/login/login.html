@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+{% load i18n allauth static %}
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% translate "Sign In" %} | {{ provider }}</title>
+    <meta http-equiv="refresh" content="0;URL='{{ redirect_to }}'" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <link rel="stylesheet" href="{% static 'redirect.css' %}">
+</head>
+<body class="boot-screen">
+
+    <div class="boot-container">
+
+        <!-- Logo / titulo -->
+        <div class="boot-logo">
+            <span class="boot-logo-pixel">P</span><span class="boot-logo-pixel">I</span><span class="boot-logo-pixel">X</span><span class="boot-logo-pixel">E</span><span class="boot-logo-pixel">L</span><span class="boot-logo-dot">.</span><span class="boot-logo-pixel">N</span><span class="boot-logo-pixel">E</span><span class="boot-logo-pixel">T</span>
+        </div>
+
+        <!-- Gato pixel animado -->
+        <svg class="boot-cat" width="80" height="80" viewBox="0 0 80 80"
+             xmlns="http://www.w3.org/2000/svg"
+             style="image-rendering:pixelated;">
+            <!-- orejas -->
+            <rect x="14" y="12" width="10" height="10" fill="#e8d5f5"/>
+            <rect x="56" y="12" width="10" height="10" fill="#e8d5f5"/>
+            <rect x="16" y="14" width="6"  height="6"  fill="#f080c0"/>
+            <rect x="58" y="14" width="6"  height="6"  fill="#f080c0"/>
+            <!-- cabeza -->
+            <rect x="14" y="22" width="52" height="38" fill="#e8d5f5"/>
+            <rect x="10" y="26" width="4"  height="30" fill="#b090d8"/>
+            <rect x="66" y="26" width="4"  height="30" fill="#b090d8"/>
+            <rect x="14" y="60" width="52" height="4"  fill="#b090d8"/>
+            <!-- ojos -->
+            <rect x="22" y="32" width="10" height="10" fill="#40e8f0"/>
+            <rect x="48" y="32" width="10" height="10" fill="#40e8f0"/>
+            <rect x="26" y="36" width="4"  height="4"  fill="#1a0a2e"/>
+            <rect x="52" y="36" width="4"  height="4"  fill="#1a0a2e"/>
+            <rect x="23" y="33" width="2"  height="2"  fill="#ffffff"/>
+            <rect x="49" y="33" width="2"  height="2"  fill="#ffffff"/>
+            <!-- nariz -->
+            <rect x="36" y="46" width="8" height="4" fill="#f080c0"/>
+            <!-- bigotes -->
+            <rect x="14" y="48" width="18" height="2" fill="#9060c0"/>
+            <rect x="48" y="48" width="18" height="2" fill="#9060c0"/>
+            <!-- boca -->
+            <rect x="30" y="52" width="20" height="2" fill="#b090d8"/>
+        </svg>
+
+        <!-- Mensaje de estado -->
+        <p class="boot-status">
+            {% blocktranslate with provider=provider %}Conectando con {{ provider }}...{% endblocktranslate %}
+        </p>
+
+        <!-- Barra de carga -->
+        <div class="boot-bar-wrapper">
+            <div class="boot-bar-track">
+                <div class="boot-bar-fill"></div>
+            </div>
+            <span class="boot-bar-label">CARGANDO...</span>
+        </div>
+
+        <!-- Puntos parpadeantes -->
+        <div class="boot-dots">
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+            <span class="dot">■</span>
+        </div>
+
+        <!-- Enlace por si no redirige -->
+        <a href="{{ redirect_to }}" class="boot-continue">
+            ▶ {% translate "Continue" %}
+        </a>
+
+    </div>
+
+</body>
+</html>

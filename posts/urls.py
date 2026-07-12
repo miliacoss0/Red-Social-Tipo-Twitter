@@ -23,4 +23,13 @@ urlpatterns = [
     path('api/hashtags/', views.api_hashtags, name='api_hashtags'),
     path('api/hashtags/<str:tema>/', views.api_hashtag_detalle, name='api_hashtag_detalle'),
     path('api/menciones/', views.api_menciones, name='api_menciones'),
+    path('api/nuevos-posts/', views.api_nuevos_posts, name='api_nuevos_posts'),
+    path('api/hashtags/', views.api_hashtags, name='api_hashtags'),
+    path('api/hashtags/<str:tema>/', views.api_hashtag_detalle, name='api_hashtag_detalle'),
+    path('like/<int:post_id>/', views.like_toggle, name='like_toggle'),
+    path('api/like/<int:post_id>/', views.api_like_toggle, name='api_like_toggle'),
+    path('comentar/<int:post_id>/', views.comentar_post, name='comentar_post'),
+    path('api/comentarios/<int:post_id>/', views.api_comentarios, name='api_comentarios'),
+    path('notificaciones/', views.notificaciones, name='notificaciones'),
+    path('api/notificaciones/', views.api_notificaciones, name='api_notificaciones'),
 ]

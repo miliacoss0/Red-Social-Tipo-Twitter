@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block sidebar_left %}{% endblock %}
 
 {% block titulo %}Nuestro Perfil - Red Social Twitter{% endblock %}
@@ -21,6 +23,10 @@
                 <p><strong>Miembro desde:</strong> {{ user.date_joined|date:"d/m/Y H:i" }}</p>
                 <p><strong>Último acceso:</strong> {{ user.last_login|date:"d/m/Y H:i" }}</p>
                 
+                <!-- Contadores de seguidores -->
+                <p><strong>Seguidores:</strong> <span id="perfil-followers-count">{{ user.followers.count }}</span></p>
+                <p><strong>Siguiendo:</strong> {{ user.following.count }}</p>
+                
                 {% if social %}
                     <h3>Datos de GitHub</h3>
                     <p><strong>ID GitHub:</strong> {{ social.uid }}</p>
@@ -38,4 +44,19 @@
 
 <h2 style="margin-top: 30px;">¿Cómo funciona este login?</h2>
 <p>Este sistema utiliza OAuth 2.0 para autenticarte con GitHub sin compartir tu contraseña.</p>
+
+<!-- Añadir CSRF token y JS -->
+{% csrf_token %}
+<script src="{% static 'js/follows.js' %}"></script>
+
+<script>
+// Escuchar eventos de follow para actualizar el contador en el perfil
+document.addEventListener('followToggle', function(e) {
+    const detail = e.detail;
+    const followersSpan = document.getElementById('perfil-followers-count');
+    if (followersSpan) {
+        followersSpan.textContent = detail.followersCount;
+    }
+});
+</script>
 {% endblock %}

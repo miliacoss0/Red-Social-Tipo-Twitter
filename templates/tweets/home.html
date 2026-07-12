@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block titulo %}Inicio - Red Social{% endblock %}
 
@@ -6,56 +7,59 @@
 <div style="max-width: 600px; margin: 0 auto;">
     <h1>Inicio</h1>
     
-    <!-- Formulario para crear tweet -->
+    <!-- Formulario para crear tweet con fetch en lugar de envio tradicional -->
     {% if user.is_authenticated %}
     <div style="background: #f6f8fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
         <h3>¿Qué está pasando?</h3>
-        <form method="post">
+        <!-- id="tweet-form" para interceptar con JavaScript -->
+        <form id="tweet-form">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
-                Tweetear
-            </button>
+            <!-- id="tweet-content" para obtener el valor desde JavaScript -->
+            <textarea id="tweet-content" 
+                      placeholder="¿Qué está pasando? Usa #hashtags y @menciones" 
+                      rows="3" 
+                      maxlength="280" 
+                      style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+                    Tweetear
+                </button>
+             </div>
         </form>
         <small style="color: #586069;">Ejemplo: "Hola @{{ user.username }} esto es una mención #test"</small>
+        <!-- Contador de caracteres en tiempo real -->
+        <span id="caracteres-contador" style="color: #586069; font-size: 14px;">280 caracteres disponibles</span>        
     </div>
     {% endif %}
     
-    <!-- Lista de tweets -->
     <h2>Tweets recientes</h2>
     
-    {% for tweet in tweets %}
-    <div style="border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-        <div style="margin-bottom: 10px; color: #0366d6;">
-            <strong>{{ tweet.author.username }}</strong>
-            <small style="color: #586069;">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
-        </div>
-        
-        <!-- Contenido del tweet con menciones resaltadas -->
-        <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
-            {{ tweet.content|linebreaksbr }}
-        </div>
-        
-        <!-- Hashtags -->
-        <div style="margin-bottom: 10px;">
-            {% for hashtag in tweet.hashtags.all %}
-            <a href="{% url 'hashtag' hashtag.name %}" style="color: #0366d6; text-decoration: none; margin-right: 10px; font-size: 14px;">
-                #{{ hashtag.name }}
-            </a>
-            {% endfor %}
-        </div>
-        
-        <!-- Indicador de menciones (si te mencionaron a TI) -->
-        {% if user.is_authenticated and user in tweet.get_mentions %}
-        <div style="background: #f0f8ff; padding: 5px 10px; border-radius: 6px; margin-top: 10px; font-size: 12px; color: #0366d6;">
-            📢 Te mencionaron en este tweet
-        </div>
-        {% endif %}
-    </div>
-    {% empty %}
-    <p>No hay tweets aún. ¡Sé el primero en publicar!</p>
-    {% endfor %}
+    <!-- Contenedor para tweets cargados via API -->
+    <div id="tweets-container"></div>
 </div>
+
+<!-- Cargar el script de API de tweets -->
+<script src="{% static 'js/tweets-api.js' %}"></script>
+
+<!-- Script para el contador de caracteres -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('tweet-content');
+    const contador = document.getElementById('caracteres-contador');
+    
+    if (textarea && contador) {
+        textarea.addEventListener('input', function() {
+            const restantes = 280 - this.value.length;
+            contador.textContent = restantes + ' caracteres disponibles';
+            if (restantes < 0) {
+                contador.style.color = 'red';
+            } else {
+                contador.style.color = '#586069';
+            }
+        });
+    }
+});
+</script>
 
 <style>
     .mention-link {

@@ -1,3 +1,5 @@
+import re  
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -5,6 +7,8 @@ from django.db.models import Q  # Para búsquedas complejas
 from .models import Tweet, HashTag
 from .forms import TweetForm
 from .models import Mention # Debe importar Mention
+from django.db.models import Q
+from django.http import JsonResponse 
 
 
 def home(request):
@@ -138,3 +142,196 @@ def perfil_usuario(request, username):
         'tweets': tweets,
     }
     return render(request, 'tweets/perfil_usuario.html', context)
+
+#Endpoints api para manejar tweets en formato JSON
+
+def api_tweets(request):
+    if request.method == 'GET':
+        # Obtener todos los tweets ordenados por fecha descendente
+        tweets = Tweet.objects.all().order_by('-created_at')
+        data = []
+        for tweet in tweets:
+            data.append({
+                'id': tweet.id,
+                'author': tweet.author.username,
+                'content': tweet.content,
+                'created_at': tweet.created_at.strftime('%d/%m/%Y %H:%M'),
+                'hashtags': [tag.name for tag in tweet.hashtags.all()],
+                'mentions': [user.username for user in tweet.get_mentions()]
+            })
+        #Devolver respuesta JSON con los tweets
+        return JsonResponse({'tweets': data}, status=200)
+    
+    elif request.method == 'POST':
+        #Manejar creacion de tweets via API
+        try:
+            #Parsear el cuerpo de la peticion como JSON
+            body = json.loads(request.body)
+            content = body.get('content', '')
+            
+            #Validar que el contenido no este vacio
+            if not content or content.strip() == '':
+                return JsonResponse({'error': 'El contenido no puede estar vacio'}, status=400)
+            
+            #Validar limite de caracteres
+            if len(content) > 280:
+                return JsonResponse({'error': 'El tweet excede los 280 caracteres'}, status=400)
+            
+            #Crear el tweet
+            tweet = Tweet.objects.create(
+                author=request.user,
+                content=content.strip()
+            )
+            
+            #Devolver respuesta de exito con el ID del tweet creado
+            return JsonResponse({
+                'ok': True,
+                'id': tweet.id,
+                'message': 'Tweet creado exitosamente'
+            }, status=201)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'JSON invalido'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    #Metodo HTTP no permitido
+    return JsonResponse({'error': 'Metodo no permitido'}, status=405)
+
+
+def api_tweets_usuario(request, username):
+    #API endpoint que devuelve los tweets de un usuario especifico en JSON.
+
+    from django.contrib.auth.models import User
+    
+    try:
+        #Buscar el usuario por nombre de usuario
+        usuario = User.objects.get(username=username)
+    except User.DoesNotExist:
+        #Usuario no encontrado
+        return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
+    
+    # Obtener tweets del usuario
+    tweets = Tweet.objects.filter(author=usuario).order_by('-created_at')
+    data = []
+    for tweet in tweets:
+        data.append({
+            'id': tweet.id,
+            'author': tweet.author.username,
+            'content': tweet.content,
+            'created_at': tweet.created_at.strftime('%d/%m/%Y %H:%M'),
+            'hashtags': [tag.name for tag in tweet.hashtags.all()]
+        })
+    
+    # Devolver respuesta JSON con los tweets del usuario
+    return JsonResponse({
+        'usuario': usuario.username,
+        'tweets': data,
+        'total': len(data)
+    }, status=200)
+
+
+def api_tweets_hashtag(request, tag_name):
+    try:
+        # Buscar el hashtag
+        hashtag = HashTag.objects.get(name=tag_name.lower())
+    except HashTag.DoesNotExist:
+        # Hashtag no encontrado
+        return JsonResponse({'error': 'Hashtag no encontrado'}, status=404)
+    
+    # Obtener tweets del hashtag
+    tweets = hashtag.tweets.all().order_by('-created_at')
+    data = []
+    for tweet in tweets:
+        data.append({
+            'id': tweet.id,
+            'author': tweet.author.username,
+            'content': tweet.content,
+            'created_at': tweet.created_at.strftime('%d/%m/%Y %H:%M')
+        })
+    
+    # Devolver respuesta JSON con los tweets del hashtag
+    return JsonResponse({
+        'hashtag': hashtag.name,
+        'tweets': data,
+        'total': len(data)
+    }, status=200)
+
+
+def api_mis_menciones(request):
+    # Verificar que el usuario este autenticado
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Usuario no autenticado'}, status=401)
+    
+    # Obtener menciones del usuario
+    menciones = Mention.objects.filter(
+        mentioned_user=request.user
+    ).select_related('tweet', 'mentioned_by').order_by('-created_at')
+    
+    data = []
+    for mencion in menciones:
+        data.append({
+            'id': mencion.id,
+            'tweet_id': mencion.tweet.id,
+            'tweet_content': mencion.tweet.content,
+            'mentioned_by': mencion.mentioned_by.username,
+            'created_at': mencion.created_at.strftime('%d/%m/%Y %H:%M'),
+            'is_read': mencion.is_read
+        })
+    
+    # Marcar todas las menciones como leidas
+    menciones.update(is_read=True)
+    
+    # Devolver respuesta JSON con las menciones
+    return JsonResponse({
+        'menciones': data,
+        'total': len(data)
+    }, status=200)
+
+
+def api_buscar_tweets(request):
+    # Obtener el parametro de busqueda
+    query = request.GET.get('q', '')
+    
+    # Validar que se haya enviado un parametro de busqueda
+    if not query:
+        return JsonResponse({'error': 'Parametro de busqueda q requerido'}, status=400)
+    
+    # Realizar la busqueda
+    results = Tweet.objects.filter(
+        Q(content__icontains=query) |
+        Q(author__username__icontains=query) |
+        Q(hashtags__name__icontains=query)
+    ).distinct().order_by('-created_at')
+    
+    data = []
+    for tweet in results:
+        data.append({
+            'id': tweet.id,
+            'author': tweet.author.username,
+            'content': tweet.content,
+            'created_at': tweet.created_at.strftime('%d/%m/%Y %H:%M'),
+            'hashtags': [tag.name for tag in tweet.hashtags.all()]
+        })
+    
+    # Devolver respuesta JSON con los resultados
+    return JsonResponse({
+        'query': query,
+        'results': data,
+        'total': len(data)
+    }, status=200)
+
+
+def api_session_info(request):
+    # Verificar que el usuario este autenticado
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'No autenticado'}, status=401)
+    
+    # Devolver informacion de la sesion
+    return JsonResponse({
+        'usuario': request.user.username,
+        'email': request.user.email,
+        'esta_autenticado': request.user.is_authenticated,
+        'session_key': request.session.session_key,
+        'cookies': list(request.COOKIES.keys())
+    }, status=200)
