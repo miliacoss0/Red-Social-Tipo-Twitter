@@ -5,254 +5,143 @@
 {% block contenido %}
 <h2>Mi Feed</h2>
 
-<form id="form-post" method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
+<form method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
     <div style="position: relative; display: inline-block;">
-        <button type="button" onclick="toggleMenu()">
-            <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
-        </button>
-        <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
-            <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
-            <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
-        </div>
+    <button type="button" onclick="toggleMenu()">
+        <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
+    </button>
+    <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
+        <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
+        <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
+    </div>
         <input type="file" id="input-foto" name="archivo" accept="image/*,.gif" style="display:none" onchange="archivoSeleccionado(this)">
         <input type="file" id="input-video" name="archivo" accept="video/mp4" style="display:none" onchange="archivoSeleccionado(this)">
         <span id="nombre-archivo"></span>
     </div>
+
+    <script>
+    function toggleMenu() {
+        const menu = document.getElementById('menu-archivo');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    function archivoSeleccionado(input) {
+        document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
+        document.getElementById('menu-archivo').style.display = 'none';
+    }
+    </script>
     <button type="submit">Publicar</button>
 </form>
+
+{% for post in posts %}
+<div class="post-card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+                <strong>{{ post.autor.username }}</strong>
+                <span>{{ post.fecha }}</span>
+                {% if post.editado %}<span>✏️ editado</span>{% endif %}
+                <p>{{ post.contenido_resaltado|safe }}</p>
+                {% if post.archivo %}
+                    {% if post.archivo.name|slice:"-4:" == ".mp4" %}
+                        <video controls style="max-width: 100%; display: block; margin: auto;">
+                            <source src="{{ post.archivo.url }}" type="video/mp4">
+                        </video>
+                    {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
+                        <audio controls>
+                        <  source src="{{ post.archivo.url }}" type="audio/mpeg">
+                        </audio>
+                    {% else %}
+                        <img src="{{ post.archivo.url }}" style="max-width: 100%;">
+                    {% endif %}
+                {% endif %}
+        </div>
+        {% if post.autor == request.user %}
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+            {% if post.puede_editar_ahora %}
+                <a href="{% url 'editar_post' post.id %}">🔧</a>
+            {% endif %}
+            <a href="{% url 'borrar_post' post.id %}">🗑️</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
+{% endfor %}
 
 <div id="posts-container"></div>
 
 <script>
-function toggleMenu() {
-    const menu = document.getElementById('menu-archivo');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-}
-
-function archivoSeleccionado(input) {
-    document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
-    document.getElementById('menu-archivo').style.display = 'none';
-}
-
-function getCSRFToken() {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'csrftoken') return value;
+// Fetch: hace una petición GET a nuestra API
+// En vez de recargar la página, trae los datos en JSON y los muestra
+fetch('/posts/api/feed/', {
+    headers: {
+        'Accept': 'application/json' // Forzar respuesta JSON
     }
-    return '';
-}
-
-function cargarPosts() {
-    fetch('/posts/api/feed/', {
-        headers: {
-            'Accept':'aplication/json'
+})
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
         }
+        return response.json();
     })
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('posts-container');
-            container.innerHTML = '';
-            if (data.posts.length === 0) {
-                container.innerHTML = '<p>No hay posts todavía.</p>';
-                return;
-            }
-            data.posts.forEach(post => {
-                const div = document.createElement('div');
-                div.className = 'post-card';
-                div.id = `post-${post.id}`;
-    
-                let archivoHtml = '';
-                if (post.archivo_url) {
-                    if (post.archivo_nombre && post.archivo_nombre.endsWith('.mp4')) {
-                        archivoHtml = `<video controls style="max-width: 100%;"><source src="${post.archivo_url}" type="video/mp4"></video>`;
-                    } else if (post.archivo_nombre && post.archivo_nombre.endsWith('.mp3')) {
-                        archivoHtml = `<audio controls><source src="${post.archivo_url}" type="audio/mpeg"></audio>`;
-                    } else {
-                        archivoHtml = `<img src="${post.archivo_url}" style="max-width: 100%;">`;
-                    }
-                }
+    .then(data => {
+        const container = document.getElementById('posts-container');
+        
+        if (data.posts.length === 0) {
+            container.innerHTML = '<p>No hay posts todavía.</p>';
+            return;
+        }
 
-                div.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1;">
-                            <strong>${post.autor}</strong>
-                            <span>${post.fecha}</span>
-                            ${post.editado ? '<span>✏️ editado</span>' : ''}
-                            <p class="post-contenido" id="contenido-${post.id}">${post.contenido}</p>
-                            ${archivoHtml}
-                        </div>
-                        ${post.es_mio ? `
-                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                           ${post.puede_editar ? `<button onclick="editarPost(${post.id})" class="btn-editar" style="background:none; border:none; cursor:pointer; font-size:20px;">✏️</button>` : ''}
-                           <button onclick="borrarPost(${post.id})" style="background:none; border:none; cursor:pointer;">🗑️</button>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-                container.appendChild(div);
-             });
-                })
-        .catch(error => console.error('Error:', error));
-}
+        data.posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <strong>${post.autor}</strong>
+                <span>${post.fecha}</span>
+                ${post.editado ? '<span>✏️ editado</span>' : ''}
+                <p>${post.contenido_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe_resaltado|safe}</p>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const container = document.getElementById('posts-container');
+        container.innerHTML = '<p style="color: red;">Error al cargar los posts. Intenta recargar la página.</p>';
+    });
+</script>
 
-document.getElementById('form-post').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const contenido = this.querySelector('textarea[name="contenido"]').value;
-    if (!contenido.trim()) return;
-
+<script>
+//  Script para crear post con header Accept forzado
+// Ejemplo de POST via fetch para crear un post
+function crearPostFetch(contenido) {
     fetch('/posts/api/feed/', {
-        method: 'POST',
+        method: 'POST',  // método HTTP POST
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken(),
-            'Accept': 'aplicationjson'
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1],  // token CSRF
+            'Accept': 'application/json'  // Forzar respuesta JSON
         },
-        body: JSON.stringify({ contenido: contenido })
+        body: JSON.stringify({ contenido: contenido })  // datos en JSON
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.ok) {
-            this.querySelector('textarea[name="contenido"]').value = '';
-            cargarPosts();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-});
-
-function borrarPost(id) {
-    if (!confirm('¿Seguro que quieres eliminar este post?')) return;
-    
-    fetch(`/posts/api/borrar/${id}/`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.ok) {
-            const postElement = document.getElementById(`post-${id}`);
-            if (postElement) {
-                postElement.style.transition = 'opacity 0.3s';
-                postElement.style.opacity = '0';
-                setTimeout(() => postElement.remove(), 300);
-            }
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function editarPost(postId) {
-    const postElement = document.getElementById(`post-${postId}`);
-    const contenidoElement = document.getElementById(`contenido-${postId}`);
-    const contenidoActual = contenidoElement.textContent;
-    
-    const textarea = document.createElement('textarea');
-    textarea.value = contenidoActual;
-    textarea.className = 'edit-textarea';
-    textarea.rows = 3;
-    textarea.style.width = '100%';
-    textarea.style.padding = '8px';
-    textarea.style.border = '2px solid #4A90D9';
-    textarea.style.borderRadius = '4px';
-    textarea.id = `textarea-${postId}`;
-    contenidoElement.replaceWith(textarea);
-    
-    const btnEditar = postElement.querySelector('.btn-editar');
-    btnEditar.textContent = '💾';
-    btnEditar.onclick = function() {
-        guardarEdicion(postId);
-    };
-    
-    textarea.focus();
-}
-
-function guardarEdicion(postId) {
-    const postElement = document.getElementById(`post-${postId}`);
-    const textarea = document.getElementById(`textarea-${postId}`);
-    const nuevoContenido = textarea.value;
-    
-    if (!nuevoContenido.trim()) {
-        alert('El contenido no puede estar vacío');
-        return;
-    }
-    
-    const btnEditar = postElement.querySelector('.btn-editar');
-    btnEditar.textContent = '⏳';
-    btnEditar.disabled = true;
-    
-    fetch(`/posts/api/editar/${postId}/`, {
-        method: 'PUT',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ contenido: nuevoContenido })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.ok) {
-            const nuevoContenidoEl = document.createElement('p');
-            nuevoContenidoEl.className = 'post-contenido';
-            nuevoContenidoEl.id = `contenido-${postId}`;
-            nuevoContenidoEl.textContent = data.post.contenido;
-            
-            textarea.replaceWith(nuevoContenidoEl);
-            
-            btnEditar.textContent = '✏️';
-            btnEditar.disabled = false;
-            btnEditar.onclick = function() {
-                editarPost(postId);
-            };
-            
-            const fechaElement = postElement.querySelector('span');
-            if (fechaElement && data.post.fecha_edicion) {
-            }
-            
-            mostrarMensaje('Post actualizado');
-            
-        } else {
-            alert('Error: ' + (data.error || 'No se pudo actualizar'));
-            // Restaurar botón
-            btnEditar.textContent = '✏️';
-            btnEditar.disabled = false;
-            cargarPosts();
+            console.log('Post creado con id:', data.id);
+            location.reload();  // recarga para ver el nuevo post
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al actualizar el post');
-        btnEditar.textContent = '✏️';
-        btnEditar.disabled = false;
-        cargarPosts(); 
+        alert('Error al crear el post: ' + error.message);
     });
 }
-
-function mostrarMensaje(texto) {
-    const mensaje = document.createElement('div');
-    mensaje.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #4CAF50;
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        z-index: 9999;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: opacity 0.3s;
-    `;
-    mensaje.textContent = texto;
-    document.body.appendChild(mensaje);
-    setTimeout(() => {
-        mensaje.style.opacity = '0';
-        setTimeout(() => mensaje.remove(), 300);
-    }, 3000);
-}
-
-cargarPosts();
 </script>
 {% endblock %}

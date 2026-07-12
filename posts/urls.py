@@ -32,4 +32,7 @@ urlpatterns = [
     path('api/comentarios/<int:post_id>/', views.api_comentarios, name='api_comentarios'),
     path('notificaciones/', views.notificaciones, name='notificaciones'),
     path('api/notificaciones/', views.api_notificaciones, name='api_notificaciones'),
+    path('api/menciones-posts/', views.api_mis_menciones_posts, name='api_mis_menciones_posts'),
+    path('api/menciones-posts/marcar-leida/<int:mencion_id>/', views.api_marcar_menciom_post_leida, name='api_marcar_menciom_post_leida'),
+    path('api/contador-menciones/', views.api_contador_menciones, name='api_contador_menciones'),
 ]

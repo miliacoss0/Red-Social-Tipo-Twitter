@@ -64,4 +64,19 @@ class Comentario(models.Model):
     def puede_editar(self):
         return (timezone.now() - self.fecha) < timedelta(minutes=5)
 
-   
+
+class MentionPost(models.Model):
+    """Modelo para almacenar menciones (@usuario) en POSTS"""
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='menciones_post')
+    mentioned_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='menciones_post_recibidas')
+    mentioned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='menciones_post_hechas')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"@{self.mentioned_by.username} mencionó a @{self.mentioned_user.username} en un post"
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Mención en Post'
+        verbose_name_plural = 'Menciones en Posts'

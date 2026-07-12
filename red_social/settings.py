@@ -132,13 +132,12 @@ WSGI_APPLICATION = 'red_social.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql', 
-        'NAME': env('DB_NAME'), 
-        'USER': env('DB_USER'), 
-        'PASSWORD': env('DB_PASSWORD'), 
-        'HOST': env('DB_HOST'), 
-        'PORT': env('DB_PORT'), 
-        'CONN_MAX_AGE': 60,
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'red_social_db',
+        'USER': 'postgres',
+        'PASSWORD': '1',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

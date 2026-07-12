@@ -1,26 +1,155 @@
 {% extends 'base.html' %}
-{% block contenido %}
-<h2>💬 Mensajes</h2>
+{% block title %}Mensajes Directos{% endblock %}
 
-{% for conv in conversaciones %}
-<div class="post-card" style="cursor: pointer;" onclick="window.location='/mensajes/conversacion/{{ conv.otro_usuario.id }}/'">
-    <strong>{{ conv.otro_usuario.username }}</strong>
-    {% if conv.mensajes_no_leidos > 0 %}
-        <span style="background: var(--pink-hot); color: white; padding: 2px 8px; border-radius: 10px;">{{ conv.mensajes_no_leidos }}</span>
-    {% endif %}
-    <p style="margin: 4px 0;">
-        {% if conv.ultimo_mensaje %}
-            {{ conv.ultimo_mensaje.contenido|truncatechars:50 }}
-        {% else %}
-            <em>Sin mensajes</em>
-        {% endif %}
-    </p>
+{% block contenido %}
+<div class="container mt-4">
+    <h2>Mensajes Directos</h2>
+    <hr>
+    
+    <div id="inbox-container">
+        <div class="list-group" id="conversaciones-list">
+            {% for conv in conversaciones %}
+                <a href="{% url 'mensajes:conversacion' conv.otro_usuario.id %}" 
+                   class="list-group-item list-group-item-action conversacion-item"
+                   data-conversacion-id="{{ conv.id }}">
+                    <div class="d-flex align-items-center">
+                        <!-- Avatar con GitHub o fallback -->
+                        {% with social=conv.otro_usuario.socialaccount_set.first %}
+                            {% if social and social.provider == 'github' %}
+                                <img src="{{ social.extra_data.avatar_url }}" 
+                                     alt="Avatar de {{ conv.otro_usuario.username }}" 
+                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                            {% elif social %}
+                                <img src="{{ social.get_avatar_url }}" 
+                                     alt="Avatar de {{ conv.otro_usuario.username }}" 
+                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ conv.otro_usuario.username|urlencode }}&background=007bff&color=fff&size=50" 
+                                     alt="Avatar de {{ conv.otro_usuario.username }}" 
+                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <div class="ms-3 flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ conv.otro_usuario.username }}</strong>
+                                {% if conv.mensajes_no_leidos > 0 %}
+                                    <span class="badge bg-primary rounded-pill">{{ conv.mensajes_no_leidos }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-muted mb-0 small">
+                                {% if conv.ultimo_mensaje %}
+                                    {{ conv.ultimo_mensaje.contenido|truncatechars:50 }}
+                                {% else %}
+                                    <em>Sin mensajes</em>
+                                {% endif %}
+                            </p>
+                            <small class="text-muted">
+                                {% if conv.ultimo_mensaje %}
+                                    {{ conv.ultimo_mensaje.fecha_envio|timesince }} atrás
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </a>
+            {% empty %}
+                <div class="text-center py-5" id="no-conversaciones">
+                    <p class="text-muted">No tienes conversaciones</p>
+                    <a href="{% url 'lista_usuarios' %}" class="btn btn-primary">
+                        Encontrar personas para chatear
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
-{% empty %}
-<div class="post-card">
-    <p>No tienes conversaciones</p>
-    <a href="{% url 'lista_usuarios' %}" class="btn">Encontrar personas</a>
-</div>
-{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = "{{ csrf_token }}";
+
+    async function actualizarConversaciones() {
+        try {
+            const response = await fetch('/mensajes/api/conversaciones/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error al actualizar conversaciones');
+            }
+
+            if (data.success && data.conversaciones) {
+                actualizarUI(data.conversaciones);
+            }
+        } catch (error) {
+            console.error('Error actualizando conversaciones:', error);
+        }
+    }
+
+    function actualizarUI(conversaciones) {
+        const container = document.getElementById('conversaciones-list');
+        if (!container) return;
+
+        if (conversaciones.length === 0) {
+            if (document.getElementById('no-conversaciones')) {
+                return;
+            }
+            container.innerHTML = `
+                <div class="text-center py-5" id="no-conversaciones">
+                    <p class="text-muted">No tienes conversaciones</p>
+                    <a href="{% url 'lista_usuarios' %}" class="btn btn-primary">
+                        Encontrar personas para chatear
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        conversaciones.forEach(conv => {
+            const avatarUrl = conv.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.usuario_nombre || 'Usuario')}&background=007bff&color=fff&size=50`;
+            
+            html += `
+                <a href="/mensajes/conversacion/${conv.usuario_id}/" 
+                   class="list-group-item list-group-item-action conversacion-item"
+                   data-conversacion-id="${conv.id}">
+                    <div class="d-flex align-items-center">
+                        <img src="${avatarUrl}" 
+                             alt="Avatar de ${conv.usuario_nombre || 'Usuario'}" 
+                             class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                        <div class="ms-3 flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>${conv.usuario_nombre || 'Usuario'}</strong>
+                                ${conv.no_leidos > 0 ? `<span class="badge bg-primary rounded-pill">${conv.no_leidos}</span>` : ''}
+                            </div>
+                            <p class="text-muted mb-0 small">
+                                ${conv.ultimo_mensaje ? conv.ultimo_mensaje.substring(0, 50) : '<em>Sin mensajes</em>'}
+                            </p>
+                            <small class="text-muted">
+                                ${conv.fecha_actualizado ? new Date(conv.fecha_actualizado).toLocaleString() : ''}
+                            </small>
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    const updateInterval = setInterval(actualizarConversaciones, 30000);
+
+    window.addEventListener('beforeunload', function () {
+        clearInterval(updateInterval);
+    });
+
+    actualizarConversaciones();
+});
+</script>
 
 {% endblock %}

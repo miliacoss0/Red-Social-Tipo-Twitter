@@ -2,140 +2,28 @@
 {% load static %}
 
 {% block contenido %}
-<div class="usuarios-container">
-    <h2>Usuarios</h2>
+<h2>Usuarios</h2>
+
+{% for usuario in usuarios %}
+<div>
+    <strong>{{ usuario.username }}</strong>
+    <span class="followers-count-{{ usuario.id }}">{{ usuario.cant_seguidores }}</span> seguidores
     
-    <input type="text" id="buscador-usuarios" 
-           placeholder="Buscar usuarios..." 
-           oninput="buscarUsuarios(this.value)"
-           style="
-               width: 100%;
-               padding: 10px;
-               border: 2px solid #4A90D9;
-               border-radius: 8px;
-               font-size: 16px;
-               margin-bottom: 20px;
-           ">
-    <div id="lista-usuarios">
-        <div class="loading">Cargando usuarios...</div>
-    </div>
+    <button class="follow-btn {% if usuario.ya_sigo %}following{% endif %}" 
+            data-user-id="{{ usuario.id }}">
+        {% if usuario.ya_sigo %}
+            Dejar de seguir
+        {% else %}
+            Seguir
+        {% endif %}
+    </button>
+    <a href="{% url 'mensajes:conversacion' usuario.id %}" class="btn">💬 Mensaje</a>
 </div>
+{% empty %}
+<p>No hay otros usuarios todavía.</p>
+{% endfor %}
 
-<script>
-function getCSRFToken() {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'csrftoken') return value;
-    }
-    return '';
-}
-
-function buscarUsuarios(query) {
-    fetch(`/posts/api/usuarios/?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('lista-usuarios');
-            
-            if (!data.usuarios || data.usuarios.length === 0) {
-                container.innerHTML = '<p>No se encontraron usuarios</p>';
-                return;
-            }
-            
-            container.innerHTML = data.usuarios.map(user => `
-                <div class="usuario-card" id="usuario-${user.id}" style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border: 1px solid #ddd;
-                    border-radius: 8px;
-                    padding: 12px 16px;
-                    margin: 8px 0;
-                ">
-                    <div>
-                        <strong>@${user.username}</strong>
-                        <span style="color: #666; margin-left: 12px;">${user.cant_seguidores} seguidores</span>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="toggleSeguir(${user.id}, this)"
-                            class="${user.ya_sigo ? 'btn-siguiendo' : 'btn-seguir'}"
-                            style="
-                                    padding: 8px 16px;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-weight: bold;
-                                    ${user.ya_sigo ? 'background: #dc3545; color: white;' : 'background: #4A90D9; color: white;'}
-                            ">
-                        ${user.ya_sigo ? 'Dejar de seguir' : 'Seguir'}
-                        </button>
-                        <a href="/mensajes/conversacion/${user.id}/" 
-                           style="padding: 8px 16px; background: #6f42c1; color: white; border-radius: 4px; text-decoration: none; display: flex; align-items: center;">
-                            💬
-                        </a>
-                    </div>
-                </div>
-            `).join('');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('lista-usuarios').innerHTML = 
-                '<p style="color: red;">Error al cargar usuarios</p>';
-        });
-}
-
-function toggleSeguir(userId, boton) {
-    const esSiguiendo = boton.textContent.trim() === 'Dejar de seguir';
-    const url = esSiguiendo 
-        ? `/posts/api/dejar-de-seguir/${userId}/` 
-        : `/posts/api/seguir/${userId}/`;
-    
-    boton.disabled = true;
-    boton.textContent = '⏳';
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.ok) {
-            if (data.siguiendo) {
-                boton.textContent = 'Dejar de seguir';
-                boton.className = 'btn-siguiendo';
-                boton.style.background = '#dc3545';
-                boton.style.color = 'white';
-            } else {
-                boton.textContent = 'Seguir';
-                boton.className = 'btn-seguir';
-                boton.style.background = '#4A90D9';
-                boton.style.color = 'white';
-            }
-            
-            const usuarioCard = document.getElementById(`usuario-${userId}`);
-            const contador = usuarioCard.querySelector('span');
-            if (contador) {
-                const actual = parseInt(contador.textContent) || 0;
-                contador.textContent = data.siguiendo ? `${actual + 1} seguidores` : `${actual - 1} seguidores`;
-            }
-        } else {
-            alert('Error al procesar la solicitud');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al procesar la solicitud');
-    })
-    .finally(() => {
-        boton.disabled = false;
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    buscarUsuarios('');
-});
-</script>
+<!-- Añadir CSRF token y JS -->
+{% csrf_token %}
+<script src="{% static 'js/follows.js' %}"></script>
 {% endblock %}
