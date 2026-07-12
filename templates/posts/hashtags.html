@@ -37,7 +37,7 @@ function cargarHashtags() {
             }
             
             container.innerHTML = data.hashtags.map(h => `
-                <div class="hashtag-card" onclick="verHashtag('${h.tema}')" style="
+                <div class="hashtag-card" onclick="verHashtag('${h.nombre}')" style="
                     display: inline-block;
                     margin: 8px;
                     padding: 12px 20px;
@@ -46,7 +46,7 @@ function cargarHashtags() {
                     cursor: pointer;
                     transition: all 0.3s;
                 ">
-                    <span style="font-weight: bold;">#${h.tema}</span>
+                    <span style="font-weight: bold;">#${h.nombre}</span>
                     <span style="margin-left: 8px; color: #666;">${h.cantidad} posts</span>
                 </div>
             `).join('');
