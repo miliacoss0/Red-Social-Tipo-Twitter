@@ -46,7 +46,11 @@ function getCSRFToken() {
 }
 
 function cargarPosts() {
-    fetch('/posts/api/feed/')
+    fetch('/posts/api/feed/', {
+        headers: {
+            'Accept':'aplication/json'
+        }
+    })
         .then(response => response.json())
         .then(data => {
             const container = document.getElementById('posts-container');
@@ -103,7 +107,8 @@ document.getElementById('form-post').addEventListener('submit', function(e) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
+            'X-CSRFToken': getCSRFToken(),
+            'Accept': 'aplicationjson'
         },
         body: JSON.stringify({ contenido: contenido })
     })

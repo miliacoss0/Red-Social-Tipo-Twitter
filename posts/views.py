@@ -101,7 +101,7 @@ def menciones(request):
 
 #funciones para que la pagina no recargue
 
-@api_required  # Decorador para forzar JSON
+#@api_required  # Decorador para forzar JSON
 @login_required
 def api_feed(request):
     #Verificar si la peticion espera JSON
