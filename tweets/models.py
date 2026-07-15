@@ -116,3 +116,28 @@ class Comentario(models.Model):
     class Meta:
         ordering = ['-created_at']  
 
+
+# MODELO: Follow (Para seguir usuarios)
+class Follow(models.Model):
+    """
+    Modelo para almacenar relaciones de seguimiento entre usuarios
+    """
+    follower = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following'      #Usuarios que sigue
+    )
+    followed = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='followers'   #Usuarios que te siguen
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        #Un usuario no puede seguir al mismo usuario 2 veces
+        unique_together = ('follower', 'followed')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f" {self.follower.username} sigue a {self.followed.username} "
