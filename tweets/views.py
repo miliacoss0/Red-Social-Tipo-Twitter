@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User 
 from django.contrib import messages
 from django.db.models import Q  # Para búsquedas complejas
 from django.db.models import Case, When, Value, IntegerField
@@ -206,3 +207,45 @@ def comentarios(request, tweet_id):
         'form': form,
     }
     return render(request, 'tweets/comentarios.html', context)
+
+
+@login_required
+def follow_user(request, username):
+    """
+    Vista para que se pueda seguir a un usuario
+    """
+    user_to_follow = get_object_or_404(User, username=username)
+
+    # No puedes seguirte a ti mismo
+    if request.user == user_to_follow:
+        messages.error(request, 'No puedes seguirte a ti mismo')
+        return redirect('perfil_usuario', username=username)
+    
+    # Verificar si ya lo sigues 
+    follow, created = Follow.objects.get_or_create(
+        follower=request.user,
+        followed=user_to_follow
+    )
+
+    if created:
+        messages.success(request, f'Ahora estás siguiendo a @{username}')
+    else:
+        messages.info(request, f'Ya sigues a @{username}')
+    
+    return redirect('perfil_usuario', username)
+
+
+@login_required
+def unfollow_user(request, username):
+    """
+    Vista para dejar de seguir a un usuario
+    """
+    user_to_unfollow = get_object_or_404(User, username=username)
+
+    Follow.objects.filter(
+        follower=request.user,
+        followed=user_to_unfollow
+    ).delete()
+
+    messages.success(request, f'Dejaste de seguir a @{username}')
+    return redirect('perfil_usuario', username=username)
