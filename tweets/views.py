@@ -36,7 +36,7 @@ def home(request):
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('-is followed', '-created_at')
+        ).order_by('-is_followed', '-created_at')
     
     # Formulario para crear tweet
     if request.method == 'POST' and request.user.is_authenticated:
