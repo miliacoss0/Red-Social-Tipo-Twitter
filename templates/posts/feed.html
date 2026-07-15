@@ -1,47 +1,151 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block contenido %}
 <h2>Mi Feed</h2>
 
 <form method="post" action="{% url 'crear_post' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <textarea name="contenido" maxlength="280" placeholder="¿Qué estás pensando?"></textarea>
-    <input type="file" name="archivo" accept="image/*,.gif,video/mp4,audio/mp3,audio/mpeg">
+    <div style="position: relative; display: inline-block;">
+    <button type="button" onclick="toggleMenu()">
+        <img src="{% static 'files.jpeg' %}" width="35" height="35" style="cursor:pointer;">
+    </button>
+    <div id="menu-archivo" style="display:none; position: absolute; background: var(--window-bg); border: 2px solid var(--blue-dark); z-index: 10;">
+        <p onclick="document.getElementById('input-foto').click()" style="padding: 8px 16px; cursor: pointer;">📷 Fotos</p>
+        <p onclick="document.getElementById('input-video').click()" style="padding: 8px 16px; cursor: pointer;">🎥 Videos</p>
+    </div>
+        <input type="file" id="input-foto" name="archivo" accept="image/*,.gif" style="display:none" onchange="archivoSeleccionado(this)">
+        <input type="file" id="input-video" name="archivo" accept="video/mp4" style="display:none" onchange="archivoSeleccionado(this)">
+        <span id="nombre-archivo"></span>
+    </div>
+
+    <script>
+    function toggleMenu() {
+        const menu = document.getElementById('menu-archivo');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    function archivoSeleccionado(input) {
+        document.getElementById('nombre-archivo').textContent = input.files[0]?.name || '';
+        document.getElementById('menu-archivo').style.display = 'none';
+    }
+    </script>
     <button type="submit">Publicar</button>
 </form>
 
 {% for post in posts %}
 <div class="post-card">
-    <strong>{{ post.autor.username }}</strong>
-    <span>{{ post.fecha }}</span>
-    {% if post.editado %}<span>✏️ editado</span>{% endif %}
-    <p>
-        {{ post.contenido }}
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+                <strong>{{ post.autor.username }}</strong>
+                <span>{{ post.fecha }}</span>
+                {% if post.editado %}<span>✏️ editado</span>{% endif %}
+                <p>{{ post.contenido_resaltado|safe }}</p>
+                {% if post.archivo %}
+                    {% if post.archivo.name|slice:"-4:" == ".mp4" %}
+                        <video controls style="max-width: 100%; display: block; margin: auto;">
+                            <source src="{{ post.archivo.url }}" type="video/mp4">
+                        </video>
+                    {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
+                        <audio controls>
+                        <source src="{{ post.archivo.url }}" type="audio/mpeg">
+                        </audio>
+                    {% else %}
+                        <img src="{{ post.archivo.url }}" style="max-width: 100%;">
+                    {% endif %}
+                {% endif %}
+        </div>
         {% if post.autor == request.user %}
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
             {% if post.puede_editar_ahora %}
-                <a href="{% url 'editar_post' post.id %}">✏️</a>
+                <a href="{% url 'editar_post' post.id %}">🔧</a>
             {% endif %}
             <a href="{% url 'borrar_post' post.id %}">🗑️</a>
+        </div>
         {% endif %}
-    </p>
-
-    {% if post.archivo %}
-        {% if post.archivo.name|slice:"-4:" == ".mp4" %}
-            <video controls style="max-width: 280px;">
-                <source src="{{ post.archivo.url }}" type="video/mp4">
-            </video>
-        {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
-            <audio controls>
-                <source src="{{ post.archivo.url }}" type="audio/mpeg">
-            </audio>
-        {% else %}
-            <img src="{{ post.archivo.url }}" style="max-width: 280px;">
-        {% endif %}
-    {% endif %}
-
+    </div>
 </div>
 {% empty %}
 <p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
 {% endfor %}
 
+<div id="posts-container"></div>
+
+<script>
+// Función para cargar posts del feed
+function cargarFeed() {
+    fetch('/posts/api/feed/', {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        const container = document.getElementById('posts-container');
+        
+        if (data.posts.length === 0) {
+            container.innerHTML = '<p>No hay posts todavía.</p>';
+            return;
+        }
+        
+        data.posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <strong>${post.autor}</strong>
+                <span>${post.fecha}</span>
+                ${post.editado ? '<span>✏️ editado</span>' : ''}
+                <p>${post.contenido}</p>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const container = document.getElementById('posts-container');
+        container.innerHTML = '<p style="color: red;">Error al cargar los posts. Intenta recargar la página.</p>';
+    });
+}
+
+// Ejecutar al cargar la página
+cargarFeed();
+</script>
+
+<script>
+//  Script para crear post con header Accept forzado
+// Ejemplo de POST via fetch para crear un post
+function crearPostFetch(contenido) {
+    fetch('/posts/api/feed/', {
+        method: 'POST',  // método HTTP POST
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1],  // token CSRF
+            'Accept': 'application/json'  // Forzar respuesta JSON
+        },
+        body: JSON.stringify({ contenido: contenido })  // datos en JSON
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.ok) {
+            console.log('Post creado con id:', data.id);
+            location.reload();  // recarga para ver el nuevo post
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear el post: ' + error.message);
+    });
+}
+</script>
 {% endblock %}

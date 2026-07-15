@@ -7,18 +7,34 @@
     <title>{% block titulo %}Bienvenido{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'base.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<<<<<<< HEAD
 
+=======
+    <!-- Cargar script global de API -->
+    <script src="{% static 'js/api.js' %}"></script>
+>>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
 </head>
 <body>
     <nav>
         <a href="/">Inicio</a>
+<<<<<<< HEAD
         {% if user.is_authenticated %}
             <a href="/perfil/">Nuestro Perfil ({{ user.username }})</a>
             <form action="{% url 'account_logout' %}" method="post" style="display: inline;">
+=======
+        <a href="{% url 'feed' %}">Feed</a>
+        <a href="{% url 'hashtags' %}">Hashtags</a>
+        <a href="{% url 'mensajes:inbox' %}" class="nav-link"> Mensajes</a>
+        <a href="/tweets/">Tweets</a>
+        {% if user.is_authenticated %}
+            <span style="color: white; margin-left: 20px;">Bienvenido, {{ user.username }}</span>
+            <form action="{% url 'account_logout' %}" method="post" style="display: inline; margin-left: 10px;">
+>>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
             </form>
         {% else %}
+<<<<<<< HEAD
             <a href="{% url 'account_login' %}" class="btn">Iniciar Sesión</a>
         {% endif %}
             {% if user.is_authenticated %}
@@ -27,13 +43,43 @@
                     <button class="btn btn-outline-success" type="submit">Buscar</button>
                 </form>
             {% endif %}
+=======
+            <a href="/accounts/github/login/" class="btn">Iniciar Sesión</a>
+        {% endif %}
+>>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
     </nav>
     <div class="main-content">
+        {% block sidebar_left %}
+        <div style="position: absolute; left: 20px; top: 32px; display: flex; flex-direction: column; gap: 16px;">
+            <!-- Bloque de Temas de Interes (arriba) -->
+            <div class="sidebar-left">
+                <div class="container">
+                    <p><strong>Temas de Interés</strong></p>
+                </div>
+                <div class="container" id="temas-interes">
+                    <!-- Temas de interés cargados via API desde api.js -->
+                    <p style="font-size: 12px; color: #586069; padding: 10px;">Cargando temas...</p>
+                </div>
+            </div>
+
+            <!-- Bloque de Buscador de Usuarios (abajo) -->
+            <div class="sidebar-left">
+                <div class="container">
+                    <p><strong>Buscar Usuarios</strong></p>
+                </div>
+                <div class="container">
+                    <form method="GET" action="{% url 'lista_usuarios' %}" style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="text" name="q"  style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button type="submit">Buscar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+
         <div class="login-box feed-box">
             <div class="win-titlebar">
-                <span class="win-title">
-                    Login.exe
-                </span>
+                <span class="win-title">Login.exe</span>
                 <div class="win-controls">
                     <button class="win-btn">-</button>
                     <button class="win-btn">□</button>
@@ -51,11 +97,19 @@
                         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
                     {% endfor %}
                 {% endif %}
-
                 {% block contenido %}
                 {% endblock %}
             </div>
         </div>
+
+        {% block sidebar_right %}
+        <div class="sidebar-right">
+            <div class="container">
+                <a href="/posts/menciones/" class="btn" style="display:block; text-align:center; margin-top: 10px;">Menciones</a>
+                <a href="{% url 'perfil' %}" class="btn" style="display:block; text-align:center;">Configuración</a>
+            </div>
+        </div>
+        {% endblock %}
     </div>
 </body>
 </html>

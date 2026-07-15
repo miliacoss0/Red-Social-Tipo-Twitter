@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block contenido %}
 <h2>Usuarios</h2>
@@ -6,16 +7,37 @@
 {% for usuario in usuarios %}
 <div>
     <strong>{{ usuario.username }}</strong>
-    <span>{{ usuario.cant_seguidores }} seguidores</span>
+    <span class="followers-count-{{ usuario.id }}">{{ usuario.cant_seguidores }}</span> seguidores
     
-    {% if usuario.ya_sigo %}
-        <a href="{% url 'dejar_de_seguir' usuario.id %}">➖ Dejar de seguir</a>
-    {% else %}
-        <a href="{% url 'seguir' usuario.id %}">➕ Seguir</a>
-    {% endif %}
+    <input type="text" id="buscador-usuarios" 
+           placeholder="Buscar usuarios..." 
+           oninput="buscarUsuarios(this.value)"
+           style="
+               width: 100%;
+               padding: 10px;
+               border: 2px solid #4A90D9;
+               border-radius: 8px;
+               font-size: 16px;
+               margin-bottom: 20px;
+           ">
+    <div id="lista-usuarios">
+        <div class="loading">Cargando usuarios...</div>
+    </div>
+    <button class="follow-btn {% if usuario.ya_sigo %}following{% endif %}" 
+            data-user-id="{{ usuario.id }}">
+        {% if usuario.ya_sigo %}
+            Dejar de seguir
+        {% else %}
+            Seguir
+        {% endif %}
+    </button>
+    <a href="{% url 'mensajes:conversacion' usuario.id %}" class="btn">💬 Mensaje</a>
 </div>
 {% empty %}
 <p>No hay otros usuarios todavía.</p>
 {% endfor %}
 
+<!-- Añadir CSRF token y JS -->
+{% csrf_token %}
+<script src="{% static 'js/follows.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<h2>@Menciones</h2>
+<hr>
+
+<div id="menciones-container">
+    {% if menciones %}
+        {% for mencion in menciones %}
+            <div class="card mb-3 {% if not mencion.leido %}border-left-4 border-primary{% endif %}" 
+                 data-mencion-id="{{ mencion.id }}" 
+                 data-tipo="{{ mencion.tipo }}">
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>
+                                    <span class="badge {% if mencion.tipo == 'post' %}bg-info{% else %}bg-success{% endif %}">
+                                        {{ mencion.tipo|upper }}
+                                    </span>
+                                    @{{ mencion.autor }}
+                                    <small class="text-muted">te mencionó</small>
+                                </strong>
+                                <small class="text-muted">{{ mencion.fecha|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <p class="mb-2 mt-2">{{ mencion.contenido|truncatechars:200 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ mencion.url }}" class="btn btn-sm btn-outline-primary">
+                                    Ver contenido →
+                                </a>
+                                {% if not mencion.leido %}
+                                    <button class="btn btn-sm btn-primary marcar-leido-btn" 
+                                            data-id="{{ mencion.id }}" 
+                                            data-tipo="{{ mencion.tipo }}">
+                                        Marcar como leído
+                                    </button>
+                                {% else %}
+                                    <span class="badge bg-success">Leído</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <p>📭 No tienes menciones</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Función para marcar como leída
+    async function marcarComoLeida(id, tipo) {
+        let url;
+        if (tipo === 'post') {
+            url = `/posts/api/menciones-posts/marcar-leida/${id}/`;
+        } else {
+            url = `/tweets/api/marcar-leida/${id}/`;
+        }
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            return data.success;
+        } catch (error) {
+            console.error('Error:', error);
+            return false;
+        }
+    }
+    
+    // Event listeners para botones de marcar como leído
+    document.querySelectorAll('.marcar-leido-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const tipo = this.dataset.tipo;
+            const card = this.closest('.card');
+            
+            const exito = await marcarComoLeida(id, tipo);
+            
+            if (exito) {
+                // Marcar como leído visualmente
+                this.insertAdjacentHTML('afterend', '<span class="badge bg-success">Leído</span>');
+                this.remove();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.border-left-4 {
+    border-left: 4px solid #007bff;
+}
+.mention-link {
+    color: #007bff;
+    font-weight: bold;
+    text-decoration: none;
+}
+.mention-link:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

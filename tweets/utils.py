@@ -1,8 +1,7 @@
 import re  # Expresiones regulares para buscar patrones en texto
+from django.contrib.auth.models import User
 
-# ============================================================
-# FUNCIÓN: Extraer hashtags de un texto
-# ============================================================
+#Extraer hashtags de un texto
 def extract_hashtags(text):
     """
     Extrae todos los hashtags de un texto.
@@ -19,16 +18,24 @@ def extract_hashtags(text):
     return [tag.lower() for tag in hashtags]
 
 
-# ============================================================
-# FUNCIÓN: Extraer menciones de un texto
-# ============================================================
+#Extraer menciones de un texto
 def extract_mentions(text):
+    """Extrae todos los nombres de usuario mencionados en un texto"""
+    # CAMBIADO: \w+ -> [\w\-]+ para aceptar guiones
+    pattern = r'@([\w\-]+)'
+    mentions = re.findall(pattern, text)
+    return list(set(mentions))
+
+def get_mentioned_users(text):
     """
-    Extrae todas las menciones de un texto.
-    Ejemplo: "Hola @juan y @maria" → ["juan", "maria"]
-    
-    ¿Cómo funciona?
-    - r'@(\w+)' busca el símbolo @ seguido de letras/números
+    Obtiene los objetos User de las menciones en un texto
     """
-    mentions = re.findall(r'@(\w+)', text)
-    return [mention.lower() for mention in mentions]
+    usernames = extract_mentions(text)
+    users = []
+    for username in usernames:
+        try:
+            user = User.objects.get(username=username)
+            users.append(user)
+        except User.DoesNotExist:
+            pass
+    return users

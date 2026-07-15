@@ -12,7 +12,7 @@ urlpatterns = [
     path('tag/<str:tag_name>/', views.hashtag_view, name='hashtag'),
 
     # Menciones
-    path('menciones/<int:id>/', views.mis_menciones, name='menciones'),
+    path('menciones/', views.mis_menciones, name='mis_menciones'),
 
     # tweet_detalle
     path('tweet/<int:tweet_id>/', views.tweet_detalle, name='tweet_detalle'), 
@@ -20,6 +20,7 @@ urlpatterns = [
     # Perfil de usuario
     path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'), 
 
+<<<<<<< HEAD
     # hashtags populares 
     path('hashtags/', views.hashtags_populares, name='hashtags_populares'),
 
@@ -32,3 +33,16 @@ urlpatterns = [
 ]
 
     
+=======
+    # API endpoints
+    path('api/tweets/', views.api_tweets, name='api_tweets'),
+    path('api/tweets/usuario/<str:username>/', views.api_tweets_usuario, name='api_tweets_usuario'), 
+    path('api/tweets/hashtag/<str:tag_name>/', views.api_tweets_hashtag, name='api_tweets_hashtag'),  
+    path('api/menciones/', views.api_mis_menciones, name='api_mis_menciones'),  
+    path('api/buscar/', views.api_buscar_tweets, name='api_buscar_tweets'),  
+    path('api/session/', views.api_session_info, name='api_session_tweets'), 
+
+    #leido
+    path('api/marcar-leida/<int:mencion_id>/', views.api_marcar_mencion_leida, name='api_marcar_mencion_leida'), 
+]
+>>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
