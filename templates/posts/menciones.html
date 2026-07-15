@@ -35,7 +35,7 @@
                                         Marcar como leído
                                     </button>
                                 {% else %}
-                                    <span class="badge bg-success">✓ Leído</span>
+                                    <span class="badge bg-success">Leído</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -91,8 +91,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (exito) {
                 // Marcar como leído visualmente
-                card.classList.remove('border-left-4', 'border-primary');
-                this.replaceWith('<span class="badge bg-success">✓ Leído</span>');
+                this.insertAdjacentHTML('afterend', '<span class="badge bg-success">Leído</span>');
+                this.remove();
             }
         });
     });
