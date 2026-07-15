@@ -34,7 +34,7 @@
     <!--Etiqueta "Sigues"-->
     <div style="margin-bottom: 10px; color:#0366d6;">
         <strong>{{ tweet.author.username }}</strong>
-        {% if user.is_authenticated and user != tweet. author and tweet.author in user.following.all %}
+        {% if user.is_authenticated and user != tweet.author and tweet.author in user.following.all %}
             <span style="background: #2ea44f; color: white; font-size: 10px; padding: 2px 8px; border-radius: 12px; margin-left: 5px;">
                   Sigues
             </span> 
