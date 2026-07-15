@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User 
 from django.contrib import messages
 from django.db.models import Q  # Para búsquedas complejas
-<<<<<<< HEAD
 from django.db.models import Case, When, Value, IntegerField
 from .models import Tweet, HashTag, Mention, Comentario, Follow      #Agregar Follow
 from .forms import TweetForm, ComentarioForm   # Formularios
@@ -42,7 +41,7 @@ def home(request):
         ).order_by('-is_followed', '-created_at')
     
     # Formulario para crear tweet
-=======
+
 from .models import Tweet, HashTag
 from .forms import TweetForm
 from .models import Mention # Debe importar Mention
@@ -71,7 +70,7 @@ def home(request):
     else:
         tweets = Tweet.objects.all().order_by('-created_at')
     
->>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
+
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
         if form.is_valid():
@@ -81,30 +80,23 @@ def home(request):
             return redirect('feed_home')
     else:
         form = TweetForm()
-<<<<<<< HEAD
 
     # Procesar las menciones resaltadas
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
     
-=======
     
     # PROCESAR MENCIONES PARA CADA TWEET
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
 
->>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
+
     context = {
         'tweets': tweets,
         'form': form,
     }
     return render(request, 'tweets/home.html', context)
-<<<<<<< HEAD
-    
 
-
-=======
->>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
 def highlight_mentions(text):
     """
     Convierte @usuario en un enlace clickeable
@@ -204,9 +196,8 @@ def perfil_usuario(request, username):
     }
     return render(request, 'tweets/perfil_usuario.html', context)
 
-<<<<<<< HEAD
+
 # Nueva Vista: hashtags_populares (Lista de hashtags más usados)
-# --------
 def hashtags_populares(request):
     """
     Muestra los hashtags más utilizados ordenados por popularidad
@@ -224,7 +215,6 @@ def hashtags_populares(request):
     return render(request, 'tweets/hashtags_populares.html', context)
 
 # Nueva Vista: comentarios (Página de comentarios)
-# ------
 def comentarios(request, tweet_id):
     """
     Muestra y procesa comentarios de un tweet específico
@@ -293,7 +283,7 @@ def unfollow_user(request, username):
 
     messages.success(request, f'Dejaste de seguir a @{username}')
     return redirect('perfil_usuario', username=username)
-=======
+
 #Endpoints api para manejar tweets en formato JSON
 
 def api_tweets(request):
@@ -518,4 +508,4 @@ def api_mis_menciones(request):
         'menciones': data,
         'total': len(data)
     }, status=200)
->>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
+
