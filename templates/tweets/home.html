@@ -30,13 +30,25 @@
             <strong>{{ tweet.author.username }}</strong>
             <small style="color: #586069;">{{ tweet.created_at|date:"d/m/Y H:i" }}</small>
         </div>
+    
+    <!--Etiqueta "Sigues"-->
+    <div style="margin-bottom: 10px; color:#0366d6;">
+        <strong>{{ tweet.author.username }}</strong>
+        {% if user.is_authenticated and user != tweet. author and tweet.author in user.following.all %}
+            <span style="background: #2ea44f; color: white; font-size: 10px; padding: 2px 8px; border-radius: 12px; margin-left: 5px;">
+                  Sigues
+            </span> 
+            {% endif %}
+            <small style="color: #586069">{{ tweet.created_at|date:"d/m/Y H:i"}} </small>
+    </div>
+
         
-        <!-- Contenido del tweet con menciones resaltadas -->
+    <!-- Contenido del tweet con menciones resaltadas -->
         <div style="margin-bottom: 10px; font-size: 16px; line-height: 1.5;">
             {{ tweet.content|linebreaksbr }}
         </div>
         
-        <!-- Hashtags -->
+    <!-- Hashtags -->
         <div style="margin-bottom: 10px;">
             {% for hashtag in tweet.hashtags.all %}
             <a href="{% url 'hashtag' hashtag.name %}" style="color: #0366d6; text-decoration: none; margin-right: 10px; font-size: 14px;">
@@ -45,16 +57,16 @@
             {% endfor %}
         </div>
         
-        <!-- Botón de comentarios -->
+    <!-- Botón de comentarios -->
         <div style="margin-top: 10px;">
             <a href="{% url 'comentarios' tweet.id %}" style="color: #0366d6; text-decoration: none; font-size: 14px;">
-                💬 {{ tweet.comentarios.count }} comentarios
+                {{ tweet.comentarios.count }} comentarios
             </a>
         </div>
-        <!-- Indicador de menciones (si te mencionaron a TI) -->
+    <!-- Indicador de menciones (si te mencionaron a TI) -->
         {% if user.is_authenticated and user in tweet.get_mentions %}
         <div style="background: #f0f8ff; padding: 5px 10px; border-radius: 6px; margin-top: 10px; font-size: 12px; color: #0366d6;">
-            📢 Te mencionaron en este tweet
+            Te mencionaron en este tweet
         </div>
         {% endif %}
     </div>
