@@ -9,8 +9,27 @@
         <p>Email: {{ perfil_usuario.email }}</p>
         <p>Miembro desde: {{ perfil_usuario.date_joined|date:"d/m/Y" }}</p>
         <p>Tweets: {{ tweets.count }}</p>
+
+        
+        <!--Botón para seguir/dejar de seguir-->
+        {% if user.is_authenticated and user != perfil_usuario %}
+            <div style="margin-top: 15px;">
+                {% if perfil_usuario in user.following.all %}
+                <!--Si ya lo sigues, mostrará un "dejar de seguir"-->
+                    <a href="{% url 'unfollow_user' perfil_usuario.username %}"
+                       style="background: #d73a49; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+                         Dejar de seguir
+                    </a>
+                {% else %}
+                <!--Si no lo sigues, va a mostrar "Seguir"-->
+                    <a href="{% url 'follow_user' perfil_usuario.username %}"
+                       style="background: #2ea44f; color:white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+                         Seguir
+                    </a>
+                {% endif %}
+            </div>
     </div>
-    
+
     <h2>Tweets de @{{ perfil_usuario.username }}</h2>
     
     {% for tweet in tweets %}
