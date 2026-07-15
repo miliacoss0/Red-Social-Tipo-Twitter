@@ -20,7 +20,7 @@ urlpatterns = [
     # Perfil de usuario
     path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'), 
 
-<<<<<<< HEAD
+
     # hashtags populares 
     path('hashtags/', views.hashtags_populares, name='hashtags_populares'),
 
@@ -30,10 +30,7 @@ urlpatterns = [
     # Seguir/dejar de seguir
     path('follow/<str:username>/', views.follow_user, name='follow_user'),
     path('unfollow/<str:username>/', views.unfollow_user, name='unfollow_user'),
-]
 
-    
-=======
     # API endpoints
     path('api/tweets/', views.api_tweets, name='api_tweets'),
     path('api/tweets/usuario/<str:username>/', views.api_tweets_usuario, name='api_tweets_usuario'), 
@@ -45,4 +42,6 @@ urlpatterns = [
     #leido
     path('api/marcar-leida/<int:mencion_id>/', views.api_marcar_mencion_leida, name='api_marcar_mencion_leida'), 
 ]
->>>>>>> ed8504273a7c5c7693cc91ce6ec62d8d81426862
+
+    
+
