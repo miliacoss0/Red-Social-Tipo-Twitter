@@ -25,5 +25,10 @@ urlpatterns = [
 
     # comentarios 
     path('comentarios/<int:tweet_id>', views.comentarios, name='comentarios'),
+
+    # Seguir/dejar de seguir
+    path('follow/<str:username>/', views.follow_user, name='follow_user'),
+    path('unfollow/<str:username>/', views.unfollow_user, name='unfollow_user'),
 ]
+
     
