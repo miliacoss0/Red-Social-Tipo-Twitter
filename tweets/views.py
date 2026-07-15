@@ -2,39 +2,62 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q  # Para búsquedas complejas
-from .models import Tweet, HashTag, Mention, Comentario      # Modelos 
+from django.db.models import Case, When, Value, IntegerField
+from .models import Tweet, HashTag, Mention, Comentario, Follow      #Agregar Follow
 from .forms import TweetForm, ComentarioForm   # Formularios
 
 
 def home(request):
     """
-    Vista principal: muestra el timeline con todos los tweets.
+    Feed personalizado algorítmico:
+    - Primero: tweets de usuarios que sigues
+    - Luego: tweets de usuarios que no sigues
+    - Ambos ordenados por fecha (más recientes primero)
     """
-    # Obtener todos los tweets (los más recientes primero)
-    tweets = Tweet.objects.all()
     
-    # Formulario para crear nuevo tweet (solo si el usuario está logueado)
+    if not request.user.is_authenticated:
+        # Si no está logueado, mostrar todos los tweets 
+        tweets = Tweet.objects.all().order_by('-created_at')
+    else:
+        #Obtener los IDs de usuarios que sigue
+        followed_users = Follow.objects.filter(
+            follower=request.user
+        ).values_list('followed_id', flat=True)
+
+        #Obtener todos los tweets
+        all_tweets = Tweet.objects.all()
+
+        # Anotar con un campo "score" para que se pueda ordenar:
+        # El 1 representa "de usuarios que sigues", y el 0 representa "de usuarios que no sigues"
+        tweets = all_tweets.annotate(
+            is_followed=Case(
+                When(author_in=followed_users, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )
+        ).order_by('-is followed', '-created_at')
+    
+    # Formulario para crear tweet
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
         if form.is_valid():
-            tweet = form.save(commit=False)  # No guardar aún
-            tweet.author = request.user      # Asignar el autor
-            tweet.save()                     # Guardar (activa el procesamiento de hashtags)
+            tweet = form.save(commit=False)
+            tweet.author = request.user
+            tweet.save()
             return redirect('feed_home')
     else:
         form = TweetForm()
-    
-    
-    # Procesar cada tweet para resaltar menciones 
+
+    # Procesar las menciones resaltadas
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
-
-
+    
     context = {
         'tweets': tweets,
         'form': form,
     }
     return render(request, 'tweets/home.html', context)
+    
 
 
 def highlight_mentions(text):
