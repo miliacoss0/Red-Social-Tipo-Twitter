@@ -11,7 +11,7 @@ urlpatterns = [
     path('borrar/<int:post_id>/', views.borrar_post, name='borrar_post'),
     path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
     path('hashtags/', views.hashtags, name='hashtags'),
-    path('menciones/', views.menciones, name='menciones'),
+    path('menciones/', views.todas_menciones, name='menciones'),
     path('hashtags/<str:tema>/', views.hashtag_detalle, name='hashtag_detalle'),
     
     #URLs API
