@@ -32,7 +32,7 @@ def home(request):
         # El 1 representa "de usuarios que sigues", y el 0 representa "de usuarios que no sigues"
         tweets = all_tweets.annotate(
             is_followed=Case(
-                When(author_in=followed_users, then=Value(1)),
+                When(author__in=followed_users, then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
