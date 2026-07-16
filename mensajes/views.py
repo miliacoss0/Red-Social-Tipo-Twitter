@@ -9,6 +9,7 @@ from .models import Conversacion, Mensaje
 import json
 from django.db.models import Q
 from posts.decorators import cache_page_timeout
+from django.views.decorators.cache import cache_page
 
 User = get_user_model()
 
@@ -32,20 +33,26 @@ def inbox(request):
     })
 
 @login_required
-@cache_page_timeout(60 * 2)  # 2min de caché
 def conversacion(request, usuario_id):
-    """Vista de conversación con optimización de queries."""
     otro_usuario = get_object_or_404(User, id=usuario_id)
-    
-    #optimizacion con select_related para emisor y receptor
-    mensajes = Mensaje.objects.filter(
-        (Q(emisor=request.user, receptor=otro_usuario) |
-         Q(emisor=otro_usuario, receptor=request.user))
-    ).select_related('emisor', 'receptor').order_by('fecha_envio')
+
+    conversacion = Conversacion.objects.filter(
+        participantes=request.user
+    ).filter(participantes=otro_usuario).first()
+
+    if conversacion:
+        mensajes = conversacion.mensajes.select_related('emisor').order_by('fecha_envio')
+        # marcar mensajes como leidos
+        mensajes.filter(emisor=otro_usuario, leido=False).update(leido=True)
+    else:
+        mensajes = []
+        conversacion = Conversacion.objects.create()
+        conversacion.participantes.add(request.user, otro_usuario)
     
     return render(request, 'mensajes/conversacion.html', {
         'mensajes': mensajes,
-        'otro_usuario': otro_usuario
+        'otro_usuario': otro_usuario,
+        'conversacion': conversacion
     })
 
 @login_required
