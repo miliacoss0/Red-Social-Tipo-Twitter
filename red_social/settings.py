@@ -53,8 +53,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'usuarios',  #  app de usuarios
     'tweets',    # app de tweets
-
-    'usuarios',  # app de usuarios
     'tweets',    # añadimos esta linea 
     'follows',
     'mensajes',  
