@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Q  # Para búsquedas complejas
 from django.db.models import Case, When, Value, IntegerField
-from .models import Tweet, HashTag, Mention, Comentario, Follow      #Agregar Follow
+from .models import Tweet, HashTag, Mention, Comentario
+from follows.models import Follow 
 from .forms import TweetForm, ComentarioForm   # Formularios
 
 
