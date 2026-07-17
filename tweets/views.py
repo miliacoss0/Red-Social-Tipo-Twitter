@@ -124,17 +124,10 @@ def mis_menciones(request):
 
 
 def tweet_detalle(request, tweet_id):
-    """
-    Muestra un tweet específico.
-    """
     from .models import Tweet
     tweet = get_object_or_404(Tweet, id=tweet_id)
     return render(request, 'tweets/tweet_detalle.html', {'tweet': tweet})
 
-
-# -----------
-# Nueva Vista: perfil_usuario (Perfil de usuario)
-# -----------
 def perfil_usuario(request, username):
     """
     Muestra el perfil de un usuario y sus tweets
@@ -268,9 +261,6 @@ def api_tweets_hashtag(request, tag_name):
 
 @login_required
 def mis_menciones(request):
-    """
-    Muestra todos los tweets donde han mencionado al usuario logueado.
-    """
     # Obtener todas las menciones del usuario actual
     menciones = Mention.objects.filter(
         mentioned_user=request.user
@@ -338,9 +328,6 @@ def api_session_info(request):
 
 @login_required
 def api_marcar_mencion_leida(request, mencion_id):
-    """
-    Marcar una mención como leída (API)
-    """
     mencion = get_object_or_404(Mention, id=mencion_id, mentioned_user=request.user)
     mencion.is_read = True
     mencion.save()
@@ -352,9 +339,6 @@ def api_marcar_mencion_leida(request, mencion_id):
 
 @login_required
 def api_mis_menciones(request):
-    """
-    API para obtener menciones del usuario autenticado en formato JSON
-    """
     # Obtener menciones del usuario
     menciones = Mention.objects.filter(
         mentioned_user=request.user

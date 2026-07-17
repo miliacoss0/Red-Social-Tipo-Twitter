@@ -34,9 +34,15 @@ urlpatterns = [
     path('api/menciones-posts/', views.api_mis_menciones_posts, name='api_mis_menciones_posts'),
     path('api/menciones-posts/marcar-leida/<int:mencion_id>/', views.api_marcar_menciom_post_leida, name='api_marcar_menciom_post_leida'),
     path('api/contador-menciones/', views.api_contador_menciones, name='api_contador_menciones'),
+    path('api/comentarios/editar/<int:comentario_id>/', views.api_editar_comentario, name='api_editar_comentario'),
+    path('api/comentarios/eliminar/<int:comentario_id>/', views.api_eliminar_comentario, name='api_eliminar_comentario'),
     
     #URLs HTML
     path('like/<int:post_id>/', views.like_toggle, name='like_toggle'),
     path('comentar/<int:post_id>/', views.comentar_post, name='comentar_post'),
     path('notificaciones/', views.notificaciones, name='notificaciones'),
+    
+    #likes
+    path('api/like/<int:post_id>/', views.api_like_toggle, name='api_like_toggle'),
+    path('api/likes/<int:post_id>/', views.api_obtener_likes, name='api_obtener_likes'),
 ]
