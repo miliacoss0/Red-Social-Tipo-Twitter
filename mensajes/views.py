@@ -7,6 +7,9 @@ from django.core.cache import cache
 from django.views.decorators.http import require_http_methods
 from .models import Conversacion, Mensaje
 import json
+from django.db.models import Q
+from posts.decorators import cache_page_timeout
+from django.views.decorators.cache import cache_page
 
 User = get_user_model()
 
@@ -30,33 +33,26 @@ def inbox(request):
     })
 
 @login_required
-def conversacion(request, user_id):
-    """Ver conversación con un usuario"""
-    otro_usuario = get_object_or_404(User, id=user_id)
-    
-    # Obtener o crear conversación
+def conversacion(request, usuario_id):
+    otro_usuario = get_object_or_404(User, id=usuario_id)
+
     conversacion = Conversacion.objects.filter(
         participantes=request.user
     ).filter(participantes=otro_usuario).first()
-    
-    if not conversacion:
+
+    if conversacion:
+        mensajes = conversacion.mensajes.select_related('emisor').order_by('fecha_envio')
+        # marcar mensajes como leidos
+        mensajes.filter(emisor=otro_usuario, leido=False).update(leido=True)
+    else:
+        mensajes = []
         conversacion = Conversacion.objects.create()
         conversacion.participantes.add(request.user, otro_usuario)
     
-    # Marcar mensajes como leídos
-    Mensaje.objects.filter(
-        conversacion=conversacion,
-        emisor=otro_usuario,
-        leido=False
-    ).update(leido=True)
-    
-    # Obtener mensajes con optimización
-    mensajes = conversacion.mensajes.select_related('emisor').order_by('fecha_envio')
-    
     return render(request, 'mensajes/conversacion.html', {
-        'conversacion': conversacion,
+        'mensajes': mensajes,
         'otro_usuario': otro_usuario,
-        'mensajes': mensajes
+        'conversacion': conversacion
     })
 
 @login_required

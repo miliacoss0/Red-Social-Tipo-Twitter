@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from functools import wraps
 from .models import Post, Follow, Comentario, MentionPost
 from .utils import extract_mentions, get_mentioned_users, highlight_mentions, api_required
+from django.core.cache import cache
+from .decorators import cache_page_timeout, invalidar_cache_usuario
 
 
 def api_required(view_func):
@@ -24,12 +26,15 @@ def api_required(view_func):
 @login_required
 def feed(request):
     siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
-    posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
-    posts = posts.order_by('-fecha')
+    
+    # optimizacion con select_related para el autor, prefetch_related para likes y comentarios
+    posts = Post.objects.filter(
+        autor__in=siguiendo
+    ).select_related('autor').prefetch_related('likes', 'comentarios').order_by('-fecha')
     
     for post in posts:
         post.puede_editar_ahora = post.puede_editar()
-        post.contenido_resaltado = highlight_mentions(post.contenido)  # RESALTAR MENCIONES
+        post.contenido_resaltado = highlight_mentions(post.contenido)
         
     return render(request, 'posts/feed.html', {'posts': posts})
 
@@ -41,15 +46,19 @@ def crear_post(request):
         if contenido:
             post = Post.objects.create(autor=request.user, contenido=contenido, archivo=archivo)
             
-            # PROCESAR MENCIONES EN EL POST
+            #procesar menciones
             mencionados = get_mentioned_users(contenido)
             for usuario in mencionados:
-                if usuario != request.user:  # No mencionarse a sí mismo
+                if usuario != request.user:
                     MentionPost.objects.create(
                         post=post,
                         mentioned_user=usuario,
                         mentioned_by=request.user
                     )
+            
+            #invalidar caché cuando se crea un nuevo post
+            invalidar_cache_usuario(request.user.id)
+            
         return redirect('feed')
     return render(request, 'posts/crear_post.html')
 
@@ -118,29 +127,38 @@ def menciones(request):
 
 @api_required  # Decorador para forzar JSON
 @login_required
+@cache_page_timeout(60 * 10)  # 10min de caché
 def api_feed(request):
-    #Verificar si la peticion espera JSON
+    """
+    API del feed con optimización y caché.
+    """
     accept_header = request.META.get('HTTP_ACCEPT', '')
     if 'application/json' not in accept_header and 'text/html' in accept_header:
-        # Si es una peticion normal del navegador, redirigir al feed HTML
         return redirect('feed')
     
     if request.method == 'GET':
         siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
-        posts = Post.objects.filter(autor__in=siguiendo) | Post.objects.filter(autor=request.user)
-        posts = posts.order_by('-fecha')
+        
+        #optimizacion con select_related para el autor
+        posts = Post.objects.filter(
+            autor__in=siguiendo
+        ).select_related('autor').order_by('-fecha')
         
         data = []
         for post in posts:
             data.append({
                 'id': post.id,
                 'autor': post.autor.username or post.autor.email or 'desconocido',
+                'es_mio': post.autor == request.user,
+                'puede_editar': post.puede_editar(),
                 'contenido': post.contenido,
                 'fecha': post.fecha.strftime('%d/%m/%Y %H:%M'),
                 'editado': post.editado,
+                'archivo_url': post.archivo.url if post.archivo else None,
+                'archivo_nombre': post.archivo.name if post.archivo else None,
             })
         return JsonResponse({'posts': data})
-
+    
     elif request.method == 'POST':
         import json
         try:
@@ -148,6 +166,8 @@ def api_feed(request):
             contenido = body.get('contenido', '')
             if contenido:
                 post = Post.objects.create(autor=request.user, contenido=contenido)
+                #invalidar caché
+                invalidar_cache_usuario(request.user.id)
                 return JsonResponse({'ok': True, 'id': post.id}, status=201)
             return JsonResponse({'ok': False, 'error': 'contenido vacio'}, status=400)
         except json.JSONDecodeError:
@@ -157,7 +177,7 @@ def api_feed(request):
         
 @login_required
 def api_session_info(request):
-    #Verificar autenticacion antes de devolver datos
+    #verificar autenticacion antes de devolver datos
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'No autenticado'}, status=401)
     
@@ -203,6 +223,7 @@ def api_nuevos_posts(request):
 #hastasg API endpoints
 
 @login_required
+@cache_page_timeout(60 * 15)  # 15min de caché
 def api_hashtags(request):
     """
     Devuelve la lista de hashtags con conteo de posts en JSON
@@ -210,7 +231,6 @@ def api_hashtags(request):
     temas = ['musica', 'comida', 'ropa', 'deporte', 'anime', 'peliculas', 
              'series', 'lectura', 'estudio', 'trabajo']
     
-    # Contar cuantos posts tiene cada hashtag
     hashtags_data = []
     for tema in temas:
         count = Post.objects.filter(contenido__icontains=f'#{tema}').count()
@@ -223,15 +243,15 @@ def api_hashtags(request):
 
 
 @login_required
+@cache_page_timeout(60 * 5)  # 5min de caché
 def api_hashtag_detalle(request, tema):
-    """
-    Devuelve los posts de un hashtag especifico en JSON
-    """
-    posts = Post.objects.filter(contenido__icontains=f'#{tema}').order_by('-fecha')
+    #optimizacion con select_related para el autor
+    posts = Post.objects.filter(
+        contenido__icontains=f'#{tema}'
+    ).select_related('autor').order_by('-fecha')
     
     data = []
     for post in posts:
-        # Determinar tipo de archivo
         archivo_url = None
         es_video = False
         es_audio = False
@@ -597,9 +617,14 @@ def api_usuarios(request):
 
 @login_required
 def api_menciones(request):
+    """Obtener menciones del usuario."""
     if request.method == 'GET':
         username = request.user.username
-        posts = Post.objects.filter(contenido__icontains=f'@{username}').order_by('-fecha')
+        #optimizacion con select_related para el autor
+        posts = Post.objects.filter(
+            contenido__icontains=f'@{username}'
+        ).select_related('autor').order_by('-fecha')
+        
         data = []
         for post in posts[:20]:
             data.append({
