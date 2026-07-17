@@ -23,14 +23,16 @@ def api_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+# posts/views.py - función feed
 @login_required
 def feed(request):
-    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+    siguiendo_ids = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
     
-    # optimizacion con select_related para el autor, prefetch_related para likes y comentarios
+    autores_ids = list(siguiendo_ids) + [request.user.id]
+    
     posts = Post.objects.filter(
-        autor__in=siguiendo
-    ).select_related('autor').prefetch_related('likes', 'comentarios').order_by('-fecha')
+        autor__in=autores_ids
+    ).select_related('autor').order_by('-fecha')
     
     for post in posts:
         post.puede_editar_ahora = post.puede_editar()
