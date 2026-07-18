@@ -14,6 +14,8 @@ class Post(models.Model):
     imagen = models.ImageField(upload_to='posts/', null=True, blank=True)  
     archivo = models.FileField(upload_to='posts/archivos/', null=True, blank=True)
     likes = models.ManyToManyField(User, related_name='posts_liked', blank=True)
+
+    peso = models.FloatField(default=0.0, db_index=True)
     
     def puede_editar(self):
         # Devuelve True si no pasaron 20 minutos desde que se publicó
