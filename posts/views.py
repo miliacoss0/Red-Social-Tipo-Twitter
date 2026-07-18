@@ -8,6 +8,8 @@ from .models import Post, Follow, Comentario, MentionPost
 from .utils import extract_mentions, get_mentioned_users, highlight_mentions, api_required
 from django.core.cache import cache
 from .decorators import cache_page_timeout, invalidar_cache_usuario
+from .feed_algorithm import calcular_peso_post, actualizar_peso_post
+from .feed_algorithm import actualizar_peso_post
 
 
 def api_required(view_func):
@@ -23,20 +25,45 @@ def api_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+# posts/views.py - función feed
 @login_required
 def feed(request):
-    siguiendo = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+    cache_key = f'feed_algoritmico_{request.user.id}'
     
-    # optimizacion con select_related para el autor, prefetch_related para likes y comentarios
-    posts = Post.objects.filter(
-        autor__in=siguiendo
-    ).select_related('autor').prefetch_related('likes', 'comentarios').order_by('-fecha')
+    # 1. Intentar obtener del caché (REDIS)
+    posts_cached = cache.get(cache_key)
     
+    if posts_cached is not None:
+        posts = posts_cached
+        print(f"Feed desde CACHÉ para {request.user.username}")
+    else:
+        print(f"Feed desde BD para {request.user.username}")
+        
+        # 2. Obtener IDs de usuarios seguidos
+        siguiendo_ids = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        autores_ids = list(siguiendo_ids) + [request.user.id]
+        
+        # 3. Obtener posts con select_related
+        posts = Post.objects.filter(
+            autor__in=autores_ids
+        ).select_related('autor')
+        
+        # 4. ORDENAR POR PESO (ALGORITMO) + FECHA
+        posts = posts.order_by('-peso', '-fecha')
+        
+        # 5. Guardar en caché (5 minutos)
+        cache.set(cache_key, posts, 300)
+    
+    # 6. Procesar posts para el template
     for post in posts:
         post.puede_editar_ahora = post.puede_editar()
         post.contenido_resaltado = highlight_mentions(post.contenido)
         
     return render(request, 'posts/feed.html', {'posts': posts})
+
+# posts/views.py - Modificar crear_post()
+
+from .feed_algorithm import calcular_peso_post
 
 @login_required
 def crear_post(request):
@@ -45,8 +72,11 @@ def crear_post(request):
         archivo = request.FILES.get('archivo')
         if contenido:
             post = Post.objects.create(autor=request.user, contenido=contenido, archivo=archivo)
+
+            post.peso = calcular_peso_post(post, request.user)
+            post.save(update_fields=['peso'])
             
-            #procesar menciones
+            # Procesar menciones
             mencionados = get_mentioned_users(contenido)
             for usuario in mencionados:
                 if usuario != request.user:
@@ -55,9 +85,12 @@ def crear_post(request):
                         mentioned_user=usuario,
                         mentioned_by=request.user
                     )
-            
-            #invalidar caché cuando se crea un nuevo post
             invalidar_cache_usuario(request.user.id)
+            
+            # Invalidar caché de seguidores
+            seguidores = Follow.objects.filter(seguido=request.user).values_list('seguidor_id', flat=True)
+            for user_id in seguidores:
+                cache.delete(f'feed_algoritmico_{user_id}')
             
         return redirect('feed')
     return render(request, 'posts/crear_post.html')
@@ -302,24 +335,67 @@ def like_toggle(request, post_id):
 @login_required
 @api_required
 def api_like_toggle(request, post_id):
-    """Alternar like en un post (API)"""
     if request.method != 'POST':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
+        return JsonResponse({
+            'success': False,
+            'error': 'Método no permitido. Usa POST.'
+        }, status=405)
+    
+    post = get_object_or_404(Post, id=post_id)
+    usuario = request.user
+    
+    # Toggle like
+    if usuario in post.likes.all():
+        post.likes.remove(usuario)
+        action = 'unliked'
+        mensaje = 'Like eliminado'
+    else:
+        post.likes.add(usuario)
+        action = 'liked'
+        mensaje = 'Like agregado'
+    
+    actualizar_peso_post(post)
+    
+    seguidores = Follow.objects.filter(seguido=post.autor).values_list('seguidor_id', flat=True)
+    for user_id in seguidores:
+        cache.delete(f'feed_algoritmico_{user_id}')
+    cache.delete(f'feed_algoritmico_{post.autor.id}')
+    
+    # Obtener últimos likes
+    ultimos_likes = post.likes.all().order_by('-id')[:5]
+    usuarios_likes = [{'id': u.id, 'username': u.username} for u in ultimos_likes]
+    
+    return JsonResponse({
+        'success': True,
+        'action': action,
+        'mensaje': mensaje,
+        'likes_count': post.likes.count(),
+        'post_id': post.id,
+        'usuario_dio_like': usuario in post.likes.all(),
+        'ultimos_likes': usuarios_likes,
+        'total_usuarios': post.likes.count()
+    }, status=200)
+    
+@login_required
+def api_obtener_likes(request, post_id):
+    if request.method != 'GET':
+        return JsonResponse({
+            'success': False,
+            'error': 'Método no permitido. Usa GET.'
+        }, status=405)
     
     post = get_object_or_404(Post, id=post_id)
     
-    if request.user in post.likes.all():
-        post.likes.remove(request.user)
-        action = 'unliked'
-    else:
-        post.likes.add(request.user)
-        action = 'liked'
+    # mostrar users q dieron like
+    usuarios = post.likes.all().values('id', 'username')
     
     return JsonResponse({
-        'action': action,
+        'success': True,
+        'post_id': post.id,
         'likes_count': post.likes.count(),
-        'post_id': post.id
-    })
+        'usuario_dio_like': request.user in post.likes.all(),
+        'usuarios': list(usuarios)
+    }, status=200)
 
 # sistema de comentarios
 
@@ -342,9 +418,8 @@ def comentar_post(request, post_id):
     return redirect('feed')
 
 @login_required
-@api_required
+# @api_required
 def api_comentarios(request, post_id):
-    """Obtener y crear comentarios de un post (API)"""
     post = get_object_or_404(Post, id=post_id)
     
     if request.method == 'GET':
@@ -358,39 +433,126 @@ def api_comentarios(request, post_id):
                 'autor_id': c.autor.id,
                 'contenido': c.contenido,
                 'fecha': c.fecha.strftime('%d/%m/%Y %H:%M'),
+                'fecha_iso': c.fecha.isoformat(),
                 'editado': c.editado,
-                'puede_editar': c.autor == request.user
+                'fecha_edicion': c.fecha_edicion.strftime('%d/%m/%Y %H:%M') if c.fecha_edicion else None,
+                'puede_editar': c.autor == request.user,
+                'es_mio': c.autor == request.user
             })
         
-        return JsonResponse({'comentarios': data})
+        return JsonResponse({
+            'success': True,
+            'post_id': post.id,
+            'total': len(data),
+            'comentarios': data
+        }, status=200)
     
     elif request.method == 'POST':
         import json
         try:
             body = json.loads(request.body)
             contenido = body.get('contenido', '').strip()
-            
-            if not contenido:
-                return JsonResponse({'error': 'Contenido vacío'}, status=400)
-            
-            comentario = Comentario.objects.create(
-                post=post,
-                autor=request.user,
-                contenido=contenido
-            )
-            
+        except json.JSONDecodeError:
             return JsonResponse({
+                'success': False,
+                'error': 'JSON inválido'
+            }, status=400)
+        
+        if not contenido:
+            return JsonResponse({
+                'success': False,
+                'error': 'El comentario no puede estar vacío'
+            }, status=400)
+        
+        comentario = Comentario.objects.create(
+            post=post,
+            autor=request.user,
+            contenido=contenido
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Comentario agregado',
+            'comentario': {
                 'id': comentario.id,
                 'autor': comentario.autor.username,
+                'autor_id': comentario.autor.id,
                 'contenido': comentario.contenido,
-                'fecha': comentario.fecha.strftime('%d/%m/%Y %H:%M')
-            }, status=201)
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'JSON inválido'}, status=400)
+                'fecha': comentario.fecha.strftime('%d/%m/%Y %H:%M'),
+                'fecha_iso': comentario.fecha.isoformat(),
+                'editado': comentario.editado,
+                'es_mio': True
+            }
+        }, status=201)
     
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    }, status=405)
 
+@login_required
+def api_editar_comentario(request, comentario_id):
+        # edtiar comentario
+    if request.method != 'PUT':
+        return JsonResponse({
+            'success': False,
+            'error': 'Método no permitido. Usa PUT.'
+        }, status=405)
+    
+    comentario = get_object_or_404(Comentario, id=comentario_id, autor=request.user)
+    
+    import json
+    try:
+        body = json.loads(request.body)
+        contenido = body.get('contenido', '').strip()
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'JSON inválido'
+        }, status=400)
+    
+    if not contenido:
+        return JsonResponse({
+            'success': False,
+            'error': 'El comentario no puede estar vacío'
+        }, status=400)
+    
+    comentario.contenido = contenido
+    comentario.editado = True
+    comentario.fecha_edicion = timezone.now()
+    comentario.save()
+    
+    return JsonResponse({
+        'success': True,
+        'mensaje': 'Comentario editado',
+        'comentario': {
+            'id': comentario.id,
+            'contenido': comentario.contenido,
+            'editado': comentario.editado,
+            'fecha_edicion': comentario.fecha_edicion.strftime('%d/%m/%Y %H:%M')
+        }
+    }, status=200)
+    
+@login_required
+def api_eliminar_comentario(request, comentario_id):
+    """ eliminar comentario"""
+    if request.method != 'DELETE':
+        return JsonResponse({
+            'success': False,
+            'error': 'Método no permitido. Usa DELETE.'
+        }, status=405)
+    
+    comentario = get_object_or_404(Comentario, id=comentario_id, autor=request.user)
+    post_id = comentario.post.id
+    comentario.delete()
+    
+    return JsonResponse({
+        'success': True,
+        'mensaje': 'Comentario eliminado',
+        'comentario_id': comentario_id,
+        'post_id': post_id
+    }, status=200)
+    
 # notificaciones
 
 @login_required
