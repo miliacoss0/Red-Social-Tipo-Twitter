@@ -41,7 +41,7 @@
                 <strong>{{ post.autor.username }}</strong>
                 <span>{{ post.fecha }}</span>
                 {% if post.editado %}<span>✏️ editado</span>{% endif %}
-                <p>{{ post.contenido }}</p>
+                <p>{{ post.contenido_resaltado|safe }}</p>
                 {% if post.archivo %}
                     {% if post.archivo.name|slice:"-4:" == ".mp4" %}
                         <video controls style="max-width: 100%; display: block; margin: auto;">
@@ -49,7 +49,7 @@
                         </video>
                     {% elif post.archivo.name|slice:"-4:" == ".mp3" %}
                         <audio controls>
-                        <  source src="{{ post.archivo.url }}" type="audio/mpeg">
+                        <source src="{{ post.archivo.url }}" type="audio/mpeg">
                         </audio>
                     {% else %}
                         <img src="{{ post.archivo.url }}" style="max-width: 100%;">
@@ -65,6 +65,30 @@
         </div>
         {% endif %}
     </div>
+    <!-- likes -->
+    <div class="post-actions">
+        <button id="like-btn-{{ post.id }}" 
+                onclick="toggleLike({{ post.id }})" 
+                class="like-btn {% if request.user in post.likes.all %}liked{% endif %}">
+            {% if request.user in post.likes.all %}❤️{% else %}🤍{% endif %}
+        </button>
+        <span id="likes-count-{{ post.id }}">{{ post.likes.count }}</span>
+        <span>likes</span>
+    </div>
+    
+    <!-- COMENTARIOS -->
+    <div class="comentarios-section">
+        <div id="comentarios-{{ post.id }}">
+            <!-- Los comentarios se cargan con JavaScript -->
+        </div>
+        
+        <div class="comentar-form">
+            <input type="text" id="comentario-input-{{ post.id }}" 
+                   placeholder="Escribe un comentario..." 
+                   onkeypress="if(event.key==='Enter') crearComentario({{ post.id }})">
+            <button onclick="crearComentario({{ post.id }})" class="btn-comentar">Comentar</button>
+        </div>
+    </div>
 </div>
 {% empty %}
 <p>No hay posts todavía. ¡Seguí a alguien o publicá algo!</p>
@@ -72,14 +96,24 @@
 
 <div id="posts-container"></div>
 
+
 <script>
-// Fetch: hace una petición GET a nuestra API
-// En vez de recargar la página, trae los datos en JSON y los muestra
-fetch('/posts/api/feed/', {
-    headers: {
-        'Accept': 'application/json' // Forzar respuesta JSON
-    }
-})
+    // Cargar comentarios al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for post in posts %}
+            cargarComentarios({{ post.id }});
+        {% endfor %}
+    });
+</script>
+
+<script>
+// Función para cargar posts del feed
+function cargarFeed() {
+    fetch('/posts/api/feed/', {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
     .then(response => {
         if (!response.ok) {
             throw new Error('Error HTTP: ' + response.status);
@@ -93,7 +127,7 @@ fetch('/posts/api/feed/', {
             container.innerHTML = '<p>No hay posts todavía.</p>';
             return;
         }
-
+        
         data.posts.forEach(post => {
             const div = document.createElement('div');
             div.className = 'post-card';
@@ -111,6 +145,10 @@ fetch('/posts/api/feed/', {
         const container = document.getElementById('posts-container');
         container.innerHTML = '<p style="color: red;">Error al cargar los posts. Intenta recargar la página.</p>';
     });
+}
+
+// Ejecutar al cargar la página
+cargarFeed();
 </script>
 
 <script>
@@ -143,5 +181,204 @@ function crearPostFetch(contenido) {
         alert('Error al crear el post: ' + error.message);
     });
 }
+
+//likes
+function toggleLike(postId) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const btn = document.querySelector(`#like-btn-${postId}`);
+    const contador = document.querySelector(`#likes-count-${postId}`);
+    
+    fetch(`/posts/api/like/${postId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar contador
+            if (contador) {
+                contador.textContent = data.likes_count;
+            }
+            
+            // Cambiar estado del botón
+            if (btn) {
+                if (data.action === 'liked') {
+                    btn.classList.add('liked');
+                    btn.innerHTML = '❤️';
+                } else {
+                    btn.classList.remove('liked');
+                    btn.innerHTML = '🤍';
+                }
+            }
+            
+            // Mostrar notificación
+            mostrarNotificacion(data.mensaje);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarNotificacion('Error al procesar like', 'error');
+    });
+}
+
+function mostrarNotificacion(mensaje, tipo = 'success') {
+    const div = document.createElement('div');
+    div.className = `notificacion ${tipo}`;
+    div.textContent = mensaje;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+}
+
+//comentarios
+function cargarComentarios(postId) {
+    const container = document.querySelector(`#comentarios-${postId}`);
+    if (!container) return;
+    
+    fetch(`/posts/api/comentarios/${postId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.comentarios.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No hay comentarios aún</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.comentarios.map(c => `
+                    <div class="comentario" id="comentario-${c.id}">
+                        <div class="comentario-header">
+                            <strong>@${c.autor}</strong>
+                            <small>${c.fecha}</small>
+                            ${c.editado ? '<span class="editado">✏️ editado</span>' : ''}
+                        </div>
+                        <p class="comentario-contenido">${c.contenido}</p>
+                        <div class="comentario-actions">
+                            ${c.es_mio ? `
+                                <button onclick="editarComentario(${c.id})" class="btn-edit">✏️</button>
+                                <button onclick="eliminarComentario(${c.id})" class="btn-delete">🗑️</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<p class="text-danger">Error al cargar comentarios</p>';
+        });
+}
+
+function crearComentario(postId) {
+    const input = document.querySelector(`#comentario-input-${postId}`);
+    const contenido = input.value.trim();
+    
+    if (!contenido) {
+        alert('Escribe un comentario');
+        return;
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/posts/api/comentarios/${postId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ contenido: contenido })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            cargarComentarios(postId);
+            mostrarNotificacion('Comentario agregado');
+        } else {
+            alert(data.error || 'Error al crear comentario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear comentario');
+    });
+}
+
+function editarComentario(comentarioId) {
+    const nuevoTexto = prompt('Editar comentario:');
+    if (!nuevoTexto || nuevoTexto.trim() === '') return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/posts/api/comentarios/editar/${comentarioId}/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ contenido: nuevoTexto.trim() })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recargar comentarios del post
+            const postId = data.comentario.post_id || obtenerPostIdDesdeComentario(comentarioId);
+            cargarComentarios(postId);
+            mostrarNotificacion('Comentario editado');
+        } else {
+            alert(data.error || 'Error al editar comentario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al editar comentario');
+    });
+}
+
+function eliminarComentario(comentarioId) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/posts/api/comentarios/eliminar/${comentarioId}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const elemento = document.querySelector(`#comentario-${comentarioId}`);
+            if (elemento) {
+                elemento.remove();
+            }
+            mostrarNotificacion('Comentario eliminado');
+        } else {
+            alert(data.error || 'Error al eliminar comentario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar comentario');
+    });
+}
+
+function obtenerPostIdDesdeComentario(comentarioId) {
+    const comentario = document.querySelector(`#comentario-${comentarioId}`);
+    if (comentario) {
+        const postCard = comentario.closest('.post-card');
+        if (postCard && postCard.dataset.postId) {
+            return postCard.dataset.postId;
+        }
+    }
+    return null;
+}
+
 </script>
 {% endblock %}

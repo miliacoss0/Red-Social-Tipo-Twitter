@@ -1,62 +1,74 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block titulo %}Inicio - Red Social Twitter{% endblock %}
+{% block titulo %}Inicio - Red Social{% endblock %}
 
 {% block contenido %}
-<h1>Bienvenido a nuestra Red Social Twitter</h1>
-{% if user.is_authenticated %}
-    <div class="alert alert-success">
-        <h2>¡Hola, {{ user.username }}!</h2>
-        <p>Has iniciado sesión correctamente con GitHub.</p>
-        <p>
-            <strong>Email:</strong> 
-            <span id="email-texto">{{ user.email|slice:":4" }}*******{{ user.email|slice:"-10:" }}</span>
-            <span id="ojo" onclick="toggleEmail('{{ user.email }}')" style="cursor:pointer;">
-                <img id="ojo-img" src="{% static 'ojo.jpg' %}" width="25" height="25" style="vertical-align: middle;">
-            </span>
-        </p>
-        <script>
-            let visible = false;
-            function toggleEmail(emailReal) {
-                const span = document.getElementById('email-texto');
-                if (visible) {
-                    const partes = emailReal.split('@');
-                    span.textContent = partes[0].slice(0, 4) + '*******@' + partes[1];
-                } else {
-                    span.textContent = emailReal;
-                }
-                visible = !visible;
+<div style="max-width: 600px; margin: 0 auto;">
+    <h1>Inicio</h1>
+    
+    <!-- Formulario para crear tweet con fetch en lugar de envio tradicional -->
+    {% if user.is_authenticated %}
+    <div style="background: #f6f8fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+        <h3>¿Qué está pasando?</h3>
+        <!-- id="tweet-form" para interceptar con JavaScript -->
+        <form id="tweet-form">
+            {% csrf_token %}
+            <!-- id="tweet-content" para obtener el valor desde JavaScript -->
+            <textarea id="tweet-content" 
+                      placeholder="¿Qué está pasando? Usa #hashtags y @menciones" 
+                      rows="3" 
+                      maxlength="280" 
+                      style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="submit" style="background-color: #2ea44f; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+                    Tweetear
+                </button>
+                <!-- Contador de caracteres - MOVERLO DENTRO DEL DIV -->
+                <span id="caracteres-contador" style="color: #586069; font-size: 14px;">280 caracteres disponibles</span>
+            </div>
+        </form>
+        <small style="color: #586069;">Ejemplo: "Hola @{{ user.username }} esto es una mención #test"</small>
+    </div>
+    {% endif %}
+    
+    <h2>Tweets recientes</h2>
+    
+    <!-- Contenedor para tweets cargados via API -->
+    <div id="tweets-container"></div>
+</div>
+
+<!-- Cargar el script de API de tweets -->
+<script src="{% static 'js/tweets-api.js' %}"></script>
+
+<!-- Script para el contador de caracteres -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('tweet-content');
+    const contador = document.getElementById('caracteres-contador');
+    
+    if (textarea && contador) {
+        textarea.addEventListener('input', function() {
+            const restantes = 280 - this.value.length;
+            contador.textContent = restantes + ' caracteres disponibles';
+            if (restantes < 0) {
+                contador.style.color = 'red';
+            } else {
+                contador.style.color = '#586069';
             }
-        </script>
-        <p><strong>Miembros desde:</strong> {{ user.date_joined|date:"d/m/Y" }}</p>
-        
-        <h3>Tu información de GitHub:</h3>
-        {% with social=user.socialaccount_set.first %}
-            {% if social %}
-                <p><strong>Perfil:</strong> <a href="{{ social.extra_data.html_url }}" target="_blank">Visitar GitHub</a></p>
-                {% if social.get_avatar_url %}
-                    <p><strong>Avatar:</strong></p>
-                    <img src="{{ social.get_avatar_url }}" alt="Avatar" style="width: 100px; border-radius: 50%;">
-                {% endif %}
-            {% endif %}
-        {% endwith %}
-        
-        <p style="margin-top: 20px;">Ya puedes empezar a usar todas las funciones de nuestra red social.</p>
-        
-        <!--  Links rapidos a las secciones -->
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
-            <a href="{% url 'feed' %}" class="btn" style="background: #2ea44f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Ver Feed</a>
-            <a href="{% url 'hashtags' %}" class="btn" style="background: #0366d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Ver Hashtags</a>
-            <a href="/tweets/" class="btn" style="background: #6f42c1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Ir a Tweets</a>
-        </div>
-    </div>
-{% else %}
-    <div class="alert alert-info">
-        <h2>¡Conéctate con GitHub!</h2>
-        <p>Para usar esta red social, inicia sesión con tu cuenta de GitHub.</p>
-        <p><strong>¿Por qué GitHub?</strong> Porque es seguro, rápido y no necesitas crear otra cuenta.</p>
-        <a href="/accounts/github/login/" class="btn" style="margin-top: 10px;">Iniciar Sesión con GitHub →</a>
-    </div>
-{% endif %}
+        });
+    }
+});
+</script>
+
+<style>
+    .mention-link {
+        color: #0366d6;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .mention-link:hover {
+        text-decoration: underline;
+    }
+</style>
 {% endblock %}
