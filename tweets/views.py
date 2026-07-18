@@ -9,28 +9,49 @@ from .forms import TweetForm
 from .models import Mention # Debe importar Mention
 from django.db.models import Q
 from django.http import JsonResponse 
-
+from posts.feed_algorithm import calcular_peso_tweet
+from django.core.cache import cache 
 
 def home(request):
-    if request.user.is_authenticated:
-        from follows.models import Follow as FollowNuevo
-        from posts.models import Follow as FollowViejo
-        
-        siguiendo_nuevo = FollowNuevo.objects.filter(
-            follower=request.user
-        ).values_list('followed', flat=True)
-        
-        siguiendo_viejo = FollowViejo.objects.filter(
-            seguidor=request.user
-        ).values_list('seguido', flat=True)
-        
-        todos_siguiendo = list(siguiendo_nuevo) + list(siguiendo_viejo)
-        
-        tweets = Tweet.objects.filter(
-            Q(author__in=todos_siguiendo) | Q(author=request.user)
-        ).order_by('-created_at')
+    cache_key = f'feed_tweets_algoritmico_{request.user.id}' if request.user.is_authenticated else 'feed_tweets_publico'
+    
+    # 1. Intentar obtener del caché
+    tweets_cached = cache.get(cache_key)
+    
+    if tweets_cached is not None:
+        tweets = tweets_cached
+        print(f"Tweets desde CACHÉ para {request.user.username if request.user.is_authenticated else 'anon'}")
     else:
-        tweets = Tweet.objects.all().order_by('-created_at')
+        print(f"Tweets desde BD")
+        
+        if request.user.is_authenticated:
+            from follows.models import Follow as FollowNuevo
+            from posts.models import Follow as FollowViejo
+            
+            siguiendo_nuevo = FollowNuevo.objects.filter(
+                follower=request.user
+            ).values_list('followed', flat=True)
+            
+            siguiendo_viejo = FollowViejo.objects.filter(
+                seguidor=request.user
+            ).values_list('seguido', flat=True)
+            
+            todos_siguiendo = list(siguiendo_nuevo) + list(siguiendo_viejo)
+            
+            tweets = Tweet.objects.filter(
+                Q(author__in=todos_siguiendo) | Q(author=request.user)
+            ).select_related('author')
+        else:
+            tweets = Tweet.objects.all().select_related('author')
+        
+        # Calcular peso para cada tweet y ordenar
+        for tweet in tweets:
+            tweet.peso = calcular_peso_tweet(tweet, request.user if request.user.is_authenticated else None)
+        
+        tweets = sorted(tweets, key=lambda x: x.peso, reverse=True)
+        
+        # Guardar en caché (5 minutos)
+        cache.set(cache_key, tweets, 300)
     
     if request.method == 'POST' and request.user.is_authenticated:
         form = TweetForm(request.POST)
@@ -42,7 +63,6 @@ def home(request):
     else:
         form = TweetForm()
     
-    # PROCESAR MENCIONES PARA CADA TWEET
     for tweet in tweets:
         tweet.content_display = highlight_mentions(tweet.content)
 
@@ -51,6 +71,7 @@ def home(request):
         'form': form,
     }
     return render(request, 'tweets/home.html', context)
+
 def highlight_mentions(text):
     """
     Convierte @usuario en un enlace clickeable
