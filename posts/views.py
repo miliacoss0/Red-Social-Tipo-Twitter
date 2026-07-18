@@ -380,7 +380,7 @@ def comentar_post(request, post_id):
     return redirect('feed')
 
 @login_required
-@api_required
+# @api_required
 def api_comentarios(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     
