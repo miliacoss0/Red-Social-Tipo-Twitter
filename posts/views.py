@@ -8,6 +8,8 @@ from .models import Post, Follow, Comentario, MentionPost
 from .utils import extract_mentions, get_mentioned_users, highlight_mentions, api_required
 from django.core.cache import cache
 from .decorators import cache_page_timeout, invalidar_cache_usuario
+from .feed_algorithm import calcular_peso_post, actualizar_peso_post
+from .feed_algorithm import actualizar_peso_post
 
 
 def api_required(view_func):
@@ -26,19 +28,42 @@ def api_required(view_func):
 # posts/views.py - función feed
 @login_required
 def feed(request):
-    siguiendo_ids = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+    cache_key = f'feed_algoritmico_{request.user.id}'
     
-    autores_ids = list(siguiendo_ids) + [request.user.id]
+    # 1. Intentar obtener del caché (REDIS)
+    posts_cached = cache.get(cache_key)
     
-    posts = Post.objects.filter(
-        autor__in=autores_ids
-    ).select_related('autor').order_by('-fecha')
+    if posts_cached is not None:
+        posts = posts_cached
+        print(f"Feed desde CACHÉ para {request.user.username}")
+    else:
+        print(f"Feed desde BD para {request.user.username}")
+        
+        # 2. Obtener IDs de usuarios seguidos
+        siguiendo_ids = Follow.objects.filter(seguidor=request.user).values_list('seguido', flat=True)
+        autores_ids = list(siguiendo_ids) + [request.user.id]
+        
+        # 3. Obtener posts con select_related
+        posts = Post.objects.filter(
+            autor__in=autores_ids
+        ).select_related('autor')
+        
+        # 4. ORDENAR POR PESO (ALGORITMO) + FECHA
+        posts = posts.order_by('-peso', '-fecha')
+        
+        # 5. Guardar en caché (5 minutos)
+        cache.set(cache_key, posts, 300)
     
+    # 6. Procesar posts para el template
     for post in posts:
         post.puede_editar_ahora = post.puede_editar()
         post.contenido_resaltado = highlight_mentions(post.contenido)
         
     return render(request, 'posts/feed.html', {'posts': posts})
+
+# posts/views.py - Modificar crear_post()
+
+from .feed_algorithm import calcular_peso_post
 
 @login_required
 def crear_post(request):
@@ -47,8 +72,11 @@ def crear_post(request):
         archivo = request.FILES.get('archivo')
         if contenido:
             post = Post.objects.create(autor=request.user, contenido=contenido, archivo=archivo)
+
+            post.peso = calcular_peso_post(post, request.user)
+            post.save(update_fields=['peso'])
             
-            #procesar menciones
+            # Procesar menciones
             mencionados = get_mentioned_users(contenido)
             for usuario in mencionados:
                 if usuario != request.user:
@@ -57,9 +85,12 @@ def crear_post(request):
                         mentioned_user=usuario,
                         mentioned_by=request.user
                     )
-            
-            #invalidar caché cuando se crea un nuevo post
             invalidar_cache_usuario(request.user.id)
+            
+            # Invalidar caché de seguidores
+            seguidores = Follow.objects.filter(seguido=request.user).values_list('seguidor_id', flat=True)
+            for user_id in seguidores:
+                cache.delete(f'feed_algoritmico_{user_id}')
             
         return redirect('feed')
     return render(request, 'posts/crear_post.html')
@@ -313,7 +344,7 @@ def api_like_toggle(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     usuario = request.user
     
-    # ver si el user dio like
+    # Toggle like
     if usuario in post.likes.all():
         post.likes.remove(usuario)
         action = 'unliked'
@@ -323,7 +354,14 @@ def api_like_toggle(request, post_id):
         action = 'liked'
         mensaje = 'Like agregado'
     
-    #obetener últimos 5 usuarios que dieron like 
+    actualizar_peso_post(post)
+    
+    seguidores = Follow.objects.filter(seguido=post.autor).values_list('seguidor_id', flat=True)
+    for user_id in seguidores:
+        cache.delete(f'feed_algoritmico_{user_id}')
+    cache.delete(f'feed_algoritmico_{post.autor.id}')
+    
+    # Obtener últimos likes
     ultimos_likes = post.likes.all().order_by('-id')[:5]
     usuarios_likes = [{'id': u.id, 'username': u.username} for u in ultimos_likes]
     
